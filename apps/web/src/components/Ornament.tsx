@@ -1,26 +1,23 @@
-// Symmetric scrollwork flourish used as a section accent. Richer than a straight rule —
-// curls on both sides meeting a central fleuron.
+// Swan divider echoes the favicon, with one swan bowing slightly lower.
 function Ornament({ className = "" }: { className?: string }) {
   return (
-    <svg
-      className={`ornament ${className}`}
-      viewBox="0 0 240 32"
-      xmlns="http://www.w3.org/2000/svg"
-      aria-hidden="true"
-    >
-      <g fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round">
-        <path d="M120 7 C104 7 96 16 80 16 L18 16" />
-        <path d="M120 25 C104 25 96 16 80 16" />
-        <path d="M120 7 C136 7 144 16 160 16 L222 16" />
-        <path d="M120 25 C136 25 144 16 160 16" />
-        <path d="M18 16 C26 16 28 9 21 8 C16 7.4 14.5 11.5 18 13.5" />
-        <path d="M222 16 C214 16 212 9 219 8 C224 7.4 225.5 11.5 222 13.5" />
+    <svg className={`ornament ${className}`} viewBox="0 0 240 44" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <g fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M22 25H87 M153 25H218" strokeWidth="0.8" opacity="0.45" />
+        <g strokeWidth="1.8">
+          <path d="M119 12C115 2 106 5 106 13c0 9 12 14 14 20" />
+          <path d="M121 16c4-8 12-7 12 0 0 7-11 12-13 17" />
+          <path d="M116 27c-7-7-12 2-19-3 2 9 12 12 23 9" />
+          <path d="M124 28c7-6 11 2 18-2-2 8-12 10-22 7" />
+          <path d="m117 11 3 5 M123 15l-3 3" strokeWidth="1.3" />
+        </g>
+        <path d="M102 29c4 2 7 2 10 1 M137 30c-3 2-6 2-9 1 M108 39h24" strokeWidth="0.8" opacity="0.65" />
       </g>
-      <path d="M120 1 L128 16 L120 31 L112 16 Z" fill="currentColor" />
-      <circle cx="80" cy="16" r="2.4" fill="currentColor" />
-      <circle cx="160" cy="16" r="2.4" fill="currentColor" />
+      <g fill="currentColor">
+        <circle cx="115" cy="9" r="0.8" />
+        <circle cx="125" cy="13" r="0.8" />
+      </g>
     </svg>
   );
 }
-
 export default Ornament;

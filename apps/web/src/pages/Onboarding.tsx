@@ -1,11 +1,8 @@
-import { Link, useSearchParams } from "react-router-dom";
+import { useState } from "react";
 import Photo from "../components/Photo";
 import { invitation } from "../data/invitation";
 
-function Onboarding() {
-  const [searchParams] = useSearchParams();
-  const guestName = searchParams.get("to");
-  const nextHref = guestName ? `/rsvp?to=${encodeURIComponent(guestName)}` : "/rsvp";
+function Onboarding({ onOpen }: { onOpen: () => void }) { const [opening, setOpening] = useState(false);
   const { coverNames, photos, eventDateTime } = invitation;
   const dateLabel = new Intl.DateTimeFormat("en-GB", {
     day: "2-digit",
@@ -15,7 +12,7 @@ function Onboarding() {
   }).format(new Date(eventDateTime)).replaceAll("/", " • ");
 
   return (
-    <main className="cover">
+    <section className={`cover${opening ? " cover-opening" : ""}`} onAnimationEnd={(event) => { if (opening && event.target === event.currentTarget) { setOpening(false); onOpen(); } }}>
       <Photo src={photos.cover} label="Cover photo" className="cover-photo" />
       <div className="cover-content">
         <h1 className="cover-names">
@@ -24,15 +21,14 @@ function Onboarding() {
           {coverNames.bride}
         </h1>
         <p className="cover-date">{dateLabel}</p>
-        <Link className="cover-next" to={nextHref} state={{ curtainReveal: true }} aria-label="Let's Begin — buka undangan">
-          <span>Let&apos;s Begin</span>
-          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
-            <path d="M12 4v16M5 13l7 7 7-7" />
-          </svg>
-        </Link>
+        <button className="cover-next" type="button" disabled={opening} aria-busy={opening} aria-label={opening ? "Membuka undangan" : "Buka undangan"} onClick={() => setOpening(true)}>
+          {opening ? <span className="cover-spinner" aria-hidden="true" /> : <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 4v16M5 13l7 7 7-7" /></svg>}
+        </button>
       </div>
-    </main>
+    </section>
   );
 }
 
 export default Onboarding;
+
+

@@ -5,6 +5,7 @@ export const invitation = {
   initials: { first: "A", second: "S" },
   // Nama tampilan halaman pembuka; bebas berbeda dari nama lengkap di bawah.
   coverNames: { groom: "Albert", bride: "Stephanie" },
+  desktopMessage: "Marriage is the quiet promise to keep choosing each other — through every season, in every little moment, for a lifetime.",
   groom: {
     name: "Albert Jaya",
     parentsLabel: "The Son of",
@@ -45,11 +46,14 @@ export const invitation = {
     mapsQuery: "\?q=Bambuden+3+(New+Bambuden)",
   },
   photos: {
-    cover: "/Onboard_photo.jpg",
-    groom: "",
-    bride: "",
-    portrait: "",
+    loveStory: "Ourlove.jpg",
+    desktop: "/Onboard_photo-clean.png",
+    cover: "/Onboard_photo-clean.png",
+    groom: "/Groom.jpg",
+    bride: "/Bride.jpg",
+    portrait: "Portrait.jpg",
     closing: "",
     gallery: ["", "", "", "", "", ""],
   },
 };
+

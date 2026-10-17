@@ -5,13 +5,11 @@
 */
 :root {
   /* DURASI ANIMASI: ubah angka dalam detik (s) di sini. */
-  --curtain-duration: 3.2s;
-  --curtain-hold: 0.35s;
   --reveal-duration: 2.4s;
   --reveal-stagger: 0.45s;
   --arrow-duration: 2.2s;
   --ivory: #fbf3de;
-  --paper: #fffbf0;
+  --paper: #0d0c0a;
   --slate: #708191;
   --slate-deep: #4f5d6b;
   --ink: #2b333b;
@@ -21,7 +19,7 @@
   --gold-light: #e6d3ad;
   --line: #ddd4c1;
 
-  --photo-placeholder: radial-gradient(120% 90% at 30% 15%, #b9c3cc 0%, #708191 45%, #4f5d6b 100%);
+  --photo-placeholder: none;
   --photo-tint: rgba(79, 93, 107, 0.22);
 
   /* Playfair Display italic is reserved for the couple's names; everything else is Montserrat. */
@@ -78,8 +76,8 @@ a {
 }
 
 .ornament {
-  width: 220px;
-  height: 30px;
+  width: 180px;
+  height: 33px;
   display: block;
   margin: 1.25rem auto 1.75rem;
   color: var(--gold);
@@ -137,6 +135,7 @@ a {
 
 /* Photo slots */
 .photo {
+  background-color: var(--slate);
   position: relative;
   background-image: var(--photo-placeholder);
   background-size: cover;
@@ -805,7 +804,7 @@ a {
   padding: 0.7rem 0.85rem;
   border: 1px solid var(--line);
   border-radius: 2px;
-  background: var(--paper);
+  background: #fff;
   color: var(--ink);
   text-transform: none;
   letter-spacing: normal;
@@ -840,6 +839,9 @@ a {
   align-items: flex-end;
   color: #fff;
   text-align: center;
+  overflow: hidden;
+  isolation: isolate;
+  background: var(--slate);
 }
 
 .closing-photo {
@@ -848,12 +850,10 @@ a {
 }
 
 .closing-photo::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  z-index: 1;
-  background: linear-gradient(to bottom, rgba(33, 40, 48, 0.15) 20%, rgba(33, 40, 48, 0.8) 100%);
+  content: none;
 }
+
+.closing-photo::after { content: none; }
 
 .closing-content {
   position: relative;
@@ -893,41 +893,13 @@ a {
   text-align: center;
   font-size: 0.72rem;
   letter-spacing: 0.08em;
-  background: var(--ink);
+  background: var(--slate);
   color: rgba(251, 243, 222, 0.7);
 }
 
 /* Animate on scroll: fade-up */
 [data-reveal] {
   transition: opacity var(--reveal-duration) ease, transform var(--reveal-duration) ease;
-}
-
-.opening-curtain {
-  position: fixed;
-  inset: 0;
-  z-index: 100;
-  display: flex;
-  overflow: hidden;
-}
-
-.curtain-panel {
-  width: 50%;
-  height: 100%;
-  background: linear-gradient(90deg, var(--slate-deep), var(--slate), var(--slate-deep));
-  animation-duration: var(--curtain-duration);
-  animation-delay: var(--curtain-hold);
-  animation-timing-function: cubic-bezier(0.65, 0, 0.2, 1);
-  animation-fill-mode: both;
-}
-
-.curtain-left { animation-name: curtain-open-left; }
-.curtain-right { animation-name: curtain-open-right; }
-
-@keyframes curtain-open-left { to { transform: translateX(-100%); } }
-@keyframes curtain-open-right { to { transform: translateX(100%); } }
-
-.invitation-opening :is(h1, h2, h3, p, blockquote, .person) {
-  opacity: 0;
 }
 
 /* Foto muncul dulu, disusul nama dan keterangan setiap pengantin. */
@@ -984,10 +956,6 @@ a {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .curtain-panel {
-    animation-duration: 0.01s;
-    animation-delay: 0s;
-  }
 
   [data-reveal],
   .person[data-reveal] > * {
@@ -1008,3 +976,53 @@ a {
     transform: none;
   }
 }
+
+
+/* Opening timing and desktop layout restored from the combined-page design. */
+:root { --opening-duration: 1.8s; }
+.desktop-photo-panel { display: none; }
+.invitation-page-panel {
+  min-width: 0;
+  position: relative;
+  isolation: isolate;
+  overflow: clip;
+}
+.cover-next { width: 44px; height: 44px; padding: 0; border-radius: 50%; font-family: inherit; cursor: pointer; }
+.cover-next:disabled { cursor: wait; }
+.cover-spinner { width: 16px; height: 16px; border: 1.5px solid rgba(255,255,255,.3); border-top-color: #fff; border-radius: 50%; animation: cover-spin 1s linear infinite; }
+.cover-opening { pointer-events: none; animation: cover-open-fade var(--opening-duration) ease-in-out both; }
+@keyframes cover-spin { to { transform: rotate(360deg); } }
+@keyframes cover-open-fade { 0%,55%,100% { opacity: 1; } 80% { opacity: .7; } }
+@media (min-width: 1024px) {
+  .desktop-photo-panel { display: block; position: fixed; inset: 0 auto 0 0; width: 60vw; height: 100dvh; overflow: hidden; background: var(--slate-deep); }
+  .desktop-photo-image { position: absolute; inset: 0 auto 0 0; width: 59.5vw; height: 100%; background-color: #c5cbcd; z-index: 1; background-size: max(90%, 67.5dvh) auto; background-repeat: no-repeat; background-position: center top; transform: scaleX(-1); }
+  .desktop-photo-panel::before { content: none; }
+  .desktop-photo-copy { position: relative; z-index: 2; height: 100%; display: flex; flex-direction: column; justify-content: center; padding: clamp(2rem,4vw,5rem); padding-right: calc(.5vw + clamp(2rem,4vw,5rem)); color: var(--ivory); text-shadow: 0 2px 16px rgba(0,0,0,.25); }
+  .desktop-photo-eyebrow { font-size: .8rem; letter-spacing: .3em; text-transform: uppercase; margin-bottom: 1.5rem; }
+  .desktop-photo-names { font-family: var(--names); font-style: italic; font-weight: 400; font-size: clamp(3.5rem,5.8vw,5rem); line-height: 1.15; margin-bottom: 2rem; overflow-wrap: anywhere; }
+  .desktop-photo-names span { display: block; }
+  .desktop-photo-message { max-width: 28rem; font-family: var(--names); font-style: italic; font-size: clamp(1rem,1.3vw,1.2rem); line-height: 1.8; text-wrap: pretty; }
+  .desktop-photo-hashtag { margin-top: 1.25rem; font-size: .85rem; letter-spacing: .08em; }
+  .invitation-page-panel { width: 40%; margin-left: 60%; }
+  .invitation-page-panel > :is(.cover,.invitation) { width: 100%; max-width: none; margin: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .cover-spinner { animation: none; }
+  .cover-opening { animation-duration: .01s; }
+}
+
+
+
+
+
+
+.love-story-photo {
+  width: 100%;
+  max-width: none;
+  aspect-ratio: 4 / 3;
+  margin: 0 auto 1.5rem;
+  border-radius: 0;
+}
+
+
+

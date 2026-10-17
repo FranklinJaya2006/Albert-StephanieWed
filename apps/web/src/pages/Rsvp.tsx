@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import { Link, useLocation, useSearchParams } from "react-router-dom";
+import { useSearchParams } from "react-router-dom";
+import GalleryGrid from "../components/GalleryGrid";
 import Countdown from "../components/Countdown";
 import EventCard from "../components/EventCard";
 import Florals from "../components/Florals";
@@ -28,19 +29,16 @@ function PersonCard({ person, photo }: { person: Person; photo: string }) {
 }
 
 function Rsvp() {
-  const location = useLocation();
-  const [opening, setOpening] = useState(location.state?.curtainReveal === true);
   const [searchParams] = useSearchParams();
   const guestName = searchParams.get("to");
   const [reserved, setReserved] = useState(false);
   const [attending, setAttending] = useState("yes");
   const [wished, setWished] = useState(false);
-  const { groom, bride, initials, photos } = invitation;
+  const { groom, bride, coverNames, initials, photos } = invitation;
 
   // Fade-up text blocks as they scroll into view. Uses a data attribute (not className) so
   // React re-renders never clobber the state.
   useEffect(() => {
-    if (opening) return;
     const items = document.querySelectorAll<HTMLElement>(".invitation :is(h1, h2, h3, p, blockquote, .person, .couple-name-part)");
     const observer = new IntersectionObserver(
       (entries) => {
@@ -59,24 +57,12 @@ function Rsvp() {
       observer.observe(el);
     });
     return () => observer.disconnect();
-  }, [opening]);
+  }, []);
 
-  useEffect(() => {
-    if (!opening) return;
-    window.scrollTo(0, 0);
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    return () => { document.body.style.overflow = previousOverflow; };
-  }, [opening]);
+
 
   return (
-    <main className={`invitation${opening ? " invitation-opening" : ""}`} inert={opening}>
-      {opening && (
-        <div className="opening-curtain" aria-hidden="true">
-          <div className="curtain-panel curtain-left" />
-          <div className="curtain-panel curtain-right" onAnimationEnd={() => setOpening(false)} />
-        </div>
-      )}
+    <div className="invitation" id="invitation-content">
       <section className="section welcome">
         <Florals position="tl" />
         <Florals position="tr" />
@@ -88,9 +74,9 @@ function Rsvp() {
           your presence at the wedding of
         </p>
         <h1 className="couple-names">
-          <span className="couple-name-part">{groom.name}</span>
+          <span className="couple-name-part">{coverNames.groom}</span>
           <span className="amp couple-name-part">&amp;</span>
-          <span className="couple-name-part">{bride.name}</span>
+          <span className="couple-name-part">{coverNames.bride}</span>
         </h1>
         <blockquote className="quote">
           &ldquo;{invitation.quote.text}&rdquo;
@@ -104,8 +90,15 @@ function Rsvp() {
         <h2 className="section-title">The Groom &amp; Bride</h2>
         <Ornament />
         <PersonCard person={groom} photo={photos.groom} />
-        <p className="and">and</p>
+        <br className="couple-amp" /> 
         <PersonCard person={bride} photo={photos.bride} />
+      </section>
+
+      <section className="section love-story" aria-labelledby="love-story-title">
+        <Florals position="tr" />
+        <h2 className="section-title" id="love-story-title">Our Love Story</h2>
+        <Photo src={photos.loveStory} label="Our Love Story photo" className="love-story-photo" />
+        <p className="story">{invitation.story}</p>
       </section>
 
       <section className="section section-dark">
@@ -178,20 +171,12 @@ function Rsvp() {
         <Florals position="tl" />
         <p className="eyebrow">Portrait of Us</p>
         <h2 className="section-title portrait-names">
-          {groom.name} &amp; {bride.name}
+          {coverNames.groom} &amp; {coverNames.bride}
         </h2>
         <Ornament />
         <Photo src={photos.portrait} label="Portrait of the couple" className="portrait-photo" />
         <p className="hashtag">{invitation.hashtag}</p>
-        <p className="story">{invitation.story}</p>
-        <div className="gallery-preview">
-          {photos.gallery.slice(0, 2).map((src, i) => (
-            <Photo key={i} src={src} label={`Gallery photo ${i + 1}`} className="gallery-preview-photo" />
-          ))}
-        </div>
-        <Link className="button view-more" to={guestName ? `/gallery?to=${encodeURIComponent(guestName)}` : "/gallery"}>
-          View More
-        </Link>
+        <GalleryGrid photos={photos.gallery} />
       </section>
 
       <section className="section kind-words">
@@ -235,17 +220,19 @@ function Rsvp() {
           <Ornament />
           <Monogram first={initials.first} second={initials.second} className="closing-monogram" />
           <h2 className="closing-names">
-            {groom.name} &amp; {bride.name}
+            {coverNames.groom} &amp; {coverNames.bride}
           </h2>
           <p className="hashtag">{invitation.hashtag}</p>
         </div>
       </section>
 
       <footer className="footer">
-        &copy; {new Date().getFullYear()} {groom.name} &amp; {bride.name}
+        &copy; {new Date().getFullYear()} {coverNames.groom} &amp; {coverNames.bride}
       </footer>
-    </main>
+    </div>
   );
 }
 
 export default Rsvp;
+
+
