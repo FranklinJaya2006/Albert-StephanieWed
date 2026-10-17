@@ -1,0 +1,1010 @@
+/*
+  Palette (60-30-10): cream base, slate blue as the main color, champagne gold as accent.
+  Slate blue = calm, trust & loyalty; cream = warmth & sincerity; gold = a precious, lasting bond.
+  The deep/ink/muted tones are darker shades of the same slate hue.
+*/
+:root {
+  /* DURASI ANIMASI: ubah angka dalam detik (s) di sini. */
+  --curtain-duration: 3.2s;
+  --curtain-hold: 0.35s;
+  --reveal-duration: 2.4s;
+  --reveal-stagger: 0.45s;
+  --arrow-duration: 2.2s;
+  --ivory: #fbf3de;
+  --paper: #fffbf0;
+  --slate: #708191;
+  --slate-deep: #4f5d6b;
+  --ink: #2b333b;
+  --muted: #636a71;
+  --gold: #b8975f;
+  --gold-deep: #8a6c3a;
+  --gold-light: #e6d3ad;
+  --line: #ddd4c1;
+
+  --photo-placeholder: radial-gradient(120% 90% at 30% 15%, #b9c3cc 0%, #708191 45%, #4f5d6b 100%);
+  --photo-tint: rgba(79, 93, 107, 0.22);
+
+  /* Playfair Display italic is reserved for the couple's names; everything else is Montserrat. */
+  --names: "Playfair Display", Georgia, serif;
+  --sans: "Montserrat", "Segoe UI", system-ui, sans-serif;
+
+  color-scheme: light;
+  color: var(--ink);
+  background: var(--slate);
+  font: 15px/1.7 var(--sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--slate);
+}
+
+h1,
+h2,
+h3 {
+  font-family: var(--sans);
+  font-weight: 500;
+  margin: 0;
+}
+
+.cover-names,
+.couple-names,
+.person-name,
+.portrait-names,
+.closing-names {
+  font-family: var(--names);
+  font-style: italic;
+  font-weight: 400;
+}
+
+p {
+  margin: 0;
+}
+
+a {
+  color: inherit;
+}
+
+.eyebrow {
+  font-size: 0.72rem;
+  letter-spacing: 0.25em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.ornament {
+  width: 220px;
+  height: 30px;
+  display: block;
+  margin: 1.25rem auto 1.75rem;
+  color: var(--gold);
+}
+
+.amp {
+  display: block;
+  font-style: italic;
+  font-size: 0.9em;
+  line-height: 1.3;
+  color: inherit;
+  margin: 0.05em 0;
+}
+
+.button {
+  display: inline-block;
+  padding: 0.8rem 2.4rem;
+  border: 1px solid var(--gold-deep);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--ink);
+  font-family: var(--sans);
+  font-size: 0.8rem;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background 0.25s ease, color 0.25s ease;
+}
+
+.button:hover {
+  background: var(--gold-deep);
+  color: var(--paper);
+}
+
+.button-light {
+  border-radius: 2px;
+  border-color: rgba(255, 255, 255, 0.7);
+  color: #fff;
+  padding: 1rem 3rem;
+  font-size: 0.68rem;
+  letter-spacing: 0.34em;
+  background: rgba(33, 40, 48, 0.15);
+  backdrop-filter: blur(4px);
+  outline: 1px solid rgba(230, 211, 173, 0.45);
+  outline-offset: -5px;
+  transition: background 0.3s ease, color 0.3s ease, outline-color 0.3s ease;
+}
+
+.button-light:hover {
+  background: var(--gold-light);
+  color: var(--slate-deep);
+  outline-color: var(--gold-deep);
+}
+
+/* Photo slots */
+.photo {
+  position: relative;
+  background-image: var(--photo-placeholder);
+  background-size: cover;
+  background-position: center;
+  overflow: hidden;
+}
+
+.photo::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: var(--photo-tint);
+  mix-blend-mode: multiply;
+}
+
+/* Monogram */
+.monogram {
+  filter: drop-shadow(0 3px 6px rgba(33, 40, 48, 0.35));
+}
+
+.monogram-letter {
+  font-family: var(--names);
+  font-style: normal;
+  font-weight: 400;
+  fill: var(--ivory);
+}
+
+.monogram-first {
+  font-size: 132px;
+}
+
+.monogram-second {
+  font-size: 108px;
+}
+
+.seal-sprig {
+  fill: none;
+  stroke: var(--ivory);
+  stroke-width: 1;
+}
+
+.seal-sprig circle {
+  fill: var(--ivory);
+}
+
+/* Royal frame — a rectangular double border with baroque corner flourishes. */
+.royal-frame {
+  position: absolute;
+  inset: 14px;
+  color: var(--gold-light);
+  opacity: 0.88;
+  pointer-events: none;
+  filter: drop-shadow(0 0 2px rgba(33, 40, 48, 0.55));
+}
+
+.royal-frame::before,
+.royal-frame::after {
+  content: "";
+  position: absolute;
+  border: 1px solid currentColor;
+}
+
+.royal-frame::before {
+  inset: 0;
+}
+
+.royal-frame::after {
+  inset: 8px;
+  opacity: 0.5;
+}
+
+.royal-corner {
+  position: absolute;
+  width: 68px;
+  height: 68px;
+}
+
+.royal-mid {
+  position: absolute;
+  width: 7px;
+  height: 7px;
+  background: currentColor;
+  transform: rotate(45deg);
+}
+
+.royal-crest {
+  position: absolute;
+  top: -13px;
+  left: 50%;
+  width: 140px;
+  height: 46px;
+  transform: translateX(-50%);
+}
+
+.royal-mid-b {
+  bottom: -4px;
+  left: 50%;
+  margin-left: -3.5px;
+}
+
+.royal-mid-l {
+  left: -4px;
+  top: 50%;
+  margin-top: -3.5px;
+}
+
+.royal-mid-r {
+  right: -4px;
+  top: 50%;
+  margin-top: -3.5px;
+}
+
+.royal-corner-tl {
+  top: -1px;
+  left: -1px;
+}
+
+.royal-corner-tr {
+  top: -1px;
+  right: -1px;
+  transform: scaleX(-1);
+}
+
+.royal-corner-bl {
+  bottom: -1px;
+  left: -1px;
+  transform: scaleY(-1);
+}
+
+.royal-corner-br {
+  bottom: -1px;
+  right: -1px;
+  transform: scale(-1, -1);
+}
+
+/* Cover */
+.cover {
+  position: relative;
+  max-width: 480px;
+  min-height: 100svh;
+  margin: 0 auto;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  overflow: hidden;
+  color: #fff;
+  text-align: center;
+}
+
+.cover-photo {
+  position: absolute;
+  inset: 0;
+  transform: scaleX(-1);
+}
+
+.cover-photo::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background: linear-gradient(to bottom, rgba(33, 40, 48, 0.1) 30%, rgba(33, 40, 48, 0.7) 100%);
+}
+
+.cover-content {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  padding: 0 2.5rem 3.5rem;
+  animation: fade-up 1s ease both;
+}
+
+.cover-eyebrow {
+  font-size: 0.75rem;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  opacity: 0.9;
+}
+
+.cover-monogram {
+  width: 120px;
+  height: 120px;
+  margin: 1.25rem auto 1rem;
+  display: block;
+}
+
+.cover-names {
+  font-size: 2.5rem;
+  line-height: 1.15;
+  margin-bottom: 1rem;
+}
+
+.cover-date {
+  margin: 0 0 1.75rem;
+  font-size: 0.8rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.cover-next {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: fit-content;
+  min-height: 44px;
+  gap: 0.65rem;
+  padding: 0.4rem 0.85rem;
+  margin: 0 auto;
+  border: 1px solid rgba(255, 255, 255, 0.65);
+  border-radius: 999px;
+  font-size: 0.7rem;
+  letter-spacing: 0.08em;
+  text-decoration: none;
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+  transition: background 180ms ease, border-color 180ms ease;
+}
+
+.cover-next:hover,
+.cover-next:focus-visible {
+  background: rgba(255, 255, 255, 0.22);
+  border-color: #fff;
+}
+
+.cover-next:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 5px;
+}
+
+.cover-next svg {
+  width: 18px;
+  height: 18px;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  animation: cover-arrow-bounce var(--arrow-duration) ease-in-out infinite;
+}
+
+@keyframes cover-arrow-bounce {
+  0%, 100% { transform: translateY(-4px); }
+  50% { transform: translateY(4px); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cover-next svg { animation: none; }
+}
+
+/* Invitation page */
+.invitation {
+  max-width: 480px;
+  margin: 0 auto;
+  background: var(--ivory);
+  overflow: hidden;
+  animation: fade-in 0.8s ease both;
+}
+
+.section {
+  padding: 4rem 2rem;
+  text-align: center;
+}
+
+.section + .section {
+  border-top: 1px solid var(--line);
+}
+
+.section {
+  position: relative;
+}
+
+.section > :not(.florals) {
+  position: relative;
+}
+
+/* Corner floral accents — faint and multiplied into the cream so they read as decoration. */
+.florals {
+  position: absolute;
+  width: 130px;
+  height: 130px;
+  pointer-events: none;
+  opacity: 0.55;
+  mix-blend-mode: multiply;
+}
+
+.florals-tl {
+  top: 0;
+  left: 0;
+}
+
+.florals-tr {
+  top: 0;
+  right: 0;
+  transform: scaleX(-1);
+}
+
+.florals-bl {
+  bottom: 0;
+  left: 0;
+  transform: scaleY(-1);
+}
+
+.florals-br {
+  bottom: 0;
+  right: 0;
+  transform: scale(-1, -1);
+}
+
+.florals-stem {
+  fill: none;
+  stroke: var(--slate);
+  stroke-width: 1.2;
+}
+
+.florals-leaf {
+  fill: var(--slate);
+  opacity: 0.6;
+}
+
+.florals-petal {
+  fill: var(--gold-light);
+  stroke: var(--gold);
+  stroke-width: 0.8;
+}
+
+.florals-center {
+  fill: var(--gold-deep);
+}
+
+.section-title {
+  font-size: 1.5rem;
+  font-weight: 400;
+  letter-spacing: 0.04em;
+  line-height: 1.3;
+  margin-bottom: 2rem;
+}
+
+.portrait-names {
+  font-size: 2rem;
+  letter-spacing: normal;
+}
+
+.lead {
+  color: var(--muted);
+  max-width: 340px;
+  margin: 0 auto;
+}
+
+.welcome .dear {
+  font-size: 0.95rem;
+  letter-spacing: 0.05em;
+  color: var(--muted);
+}
+
+.guest-name {
+  font-size: 1.6rem;
+  margin-top: 0.25rem;
+}
+
+.couple-names {
+  font-size: 2.6rem;
+  line-height: 1.15;
+  margin: 1.75rem 0 2rem;
+}
+
+.quote {
+  margin: 0 auto;
+  max-width: 340px;
+  font-weight: 300;
+  font-size: 0.95rem;
+  line-height: 1.8;
+}
+
+.quote cite {
+  display: block;
+  margin-top: 0.75rem;
+  font-family: var(--sans);
+  font-style: normal;
+  font-size: 0.75rem;
+  letter-spacing: 0.15em;
+  color: var(--muted);
+}
+
+/* Groom & bride */
+.person-photo {
+  width: 190px;
+  aspect-ratio: 3 / 4;
+  margin: 0 auto 1.5rem;
+  border-radius: 0;
+  outline: 1px solid var(--gold);
+  outline-offset: 7px;
+}
+
+.person-name {
+  font-size: 1.9rem;
+  line-height: 1.15;
+  margin-bottom: 0.5rem;
+}
+
+.person-parents {
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.person-social {
+  margin-top: 0.5rem;
+  font-size: 0.85rem;
+  color: var(--gold-deep);
+}
+
+.and {
+  font-size: 0.85rem;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--gold-deep);
+  margin: 2.5rem 0;
+}
+
+/* When & where */
+.section-dark {
+  background: var(--slate);
+  color: var(--ivory);
+}
+
+.section.section-dark + .section {
+  border-top: none;
+}
+
+.section-dark .eyebrow {
+  color: rgba(251, 243, 222, 0.75);
+}
+
+.countdown {
+  display: flex;
+  justify-content: center;
+  gap: 0.75rem;
+}
+
+.countdown-unit {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 58px;
+  padding: 0.5rem 0.9rem;
+}
+
+.countdown-unit + .countdown-unit {
+  border-left: 1px solid rgba(184, 151, 95, 0.5);
+}
+
+.countdown-value {
+  font-weight: 300;
+  font-size: 1.6rem;
+  line-height: 1.2;
+}
+
+.countdown-label {
+  font-size: 0.65rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  opacity: 0.8;
+}
+
+.save-the-date {
+  margin: 3rem 0 1.5rem;
+}
+
+.events {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.event-card {
+  padding: 2.5rem 1.5rem 2.25rem;
+  background: var(--ivory);
+  color: var(--ink);
+  border: 1px solid var(--gold);
+  border-radius: 2px;
+  outline: 1px solid rgba(184, 151, 95, 0.35);
+  outline-offset: -8px;
+}
+
+.event-label {
+  font-size: 1.2rem;
+  letter-spacing: 0.04em;
+  margin: 1rem 0 0.75rem;
+}
+
+.event-date,
+.event-time {
+  font-size: 0.9rem;
+}
+
+.event-venue {
+  font-size: 1rem;
+  font-weight: 600;
+  margin-top: 1rem;
+}
+
+.event-address {
+  font-size: 0.8rem;
+  color: var(--muted);
+  margin-top: 0.25rem;
+}
+
+.event-link {
+  display: inline-block;
+  margin-top: 1.25rem;
+  padding: 0.55rem 1.5rem;
+  border-radius: 999px;
+  background: var(--slate-deep);
+  color: var(--ivory);
+  font-size: 0.72rem;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  text-decoration: none;
+}
+
+/* Portrait & gallery */
+.portrait-photo {
+  width: 100%;
+  aspect-ratio: 4 / 5;
+  border-radius: 0;
+  outline: 1px solid var(--gold);
+  outline-offset: 7px;
+}
+
+.hashtag {
+  margin-top: 1.25rem;
+  font-size: 0.9rem;
+  font-weight: 500;
+  letter-spacing: 0.05em;
+  color: var(--gold-deep);
+}
+
+.story {
+  color: var(--muted);
+  max-width: 340px;
+  margin: 0.75rem auto 2rem;
+}
+
+/* Editorial gallery — staggered widths and heights, never a uniform grid. */
+.gallery-grid {
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  gap: 22px;
+  margin-top: 2.5rem;
+  padding: 8px;
+}
+
+.gallery-photo {
+  position: relative;
+  align-self: start;
+  border: 1px solid rgba(184, 151, 95, 0.75);
+  padding: 5px;
+  background: rgba(255, 253, 248, 0.06);
+}
+
+.gallery-photo:nth-child(1) {
+  grid-column: 1 / 8;
+  aspect-ratio: 4 / 5;
+  border-radius: 90px 90px 2px 2px;
+}
+
+.gallery-photo:nth-child(2) {
+  grid-column: 8 / 13;
+  aspect-ratio: 3 / 5;
+  margin-top: 2.5rem;
+  border-radius: 2px;
+}
+
+.gallery-photo:nth-child(3) {
+  grid-column: 1 / 6;
+  aspect-ratio: 3 / 4;
+  border-radius: 2px;
+}
+
+.gallery-photo:nth-child(4) {
+  grid-column: 6 / 13;
+  aspect-ratio: 4 / 3;
+  margin-top: 1.5rem;
+  border-radius: 2px;
+}
+
+.gallery-photo:nth-child(5) {
+  grid-column: 1 / 9;
+  aspect-ratio: 16 / 10;
+  border-radius: 60px 60px 2px 2px;
+}
+
+.gallery-photo:nth-child(6) {
+  grid-column: 9 / 13;
+  aspect-ratio: 3 / 4;
+  margin-top: 2.25rem;
+  border-radius: 2px;
+}
+
+/* Outer hairline + gold beads sitting on the four corners of each tile. */
+.gallery-photo::after {
+  content: "";
+  position: absolute;
+  inset: -7px;
+  border: 1px solid rgba(184, 151, 95, 0.55);
+  border-radius: inherit;
+  pointer-events: none;
+}
+
+.gallery-photo::before {
+  content: "";
+  position: absolute;
+  inset: -7px;
+  border-radius: inherit;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 0 0, var(--gold) 0 1.7px, transparent 1.8px),
+    radial-gradient(circle at 100% 0, var(--gold) 0 1.7px, transparent 1.8px),
+    radial-gradient(circle at 0 100%, var(--gold) 0 1.7px, transparent 1.8px),
+    radial-gradient(circle at 100% 100%, var(--gold) 0 1.7px, transparent 1.8px);
+  background-repeat: no-repeat;
+}
+
+/* Two full-bleed portrait photos on the invitation; the rest live on /gallery. */
+.gallery-preview {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 2.5rem -2rem 0;
+}
+
+.gallery-preview-photo {
+  width: 100%;
+  aspect-ratio: 3 / 4;
+}
+
+.view-more {
+  margin-top: 2.5rem;
+}
+
+.gallery-page {
+  min-height: 100svh;
+}
+
+/* Kind words */
+.wish-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  margin-top: 2rem;
+  text-align: left;
+}
+
+.wish-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  font-size: 0.72rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.wish-form input,
+.wish-form select,
+.wish-form textarea {
+  font: inherit;
+  font-size: 0.95rem;
+  padding: 0.7rem 0.85rem;
+  border: 1px solid var(--line);
+  border-radius: 2px;
+  background: var(--paper);
+  color: var(--ink);
+  text-transform: none;
+  letter-spacing: normal;
+}
+
+.wish-form textarea {
+  border-radius: 14px 14px 2px 2px;
+}
+
+.wish-form input:focus,
+.wish-form select:focus,
+.wish-form textarea:focus {
+  outline: 2px solid var(--slate);
+  outline-offset: 1px;
+}
+
+.wish-form .button {
+  align-self: center;
+  margin-top: 0.5rem;
+}
+
+.thank-you {
+  margin-top: 2rem;
+  font-size: 1rem;
+}
+
+/* Closing */
+.closing {
+  position: relative;
+  min-height: 640px;
+  display: flex;
+  align-items: flex-end;
+  color: #fff;
+  text-align: center;
+}
+
+.closing-photo {
+  position: absolute;
+  inset: 0;
+}
+
+.closing-photo::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background: linear-gradient(to bottom, rgba(33, 40, 48, 0.15) 20%, rgba(33, 40, 48, 0.8) 100%);
+}
+
+.closing-content {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  padding: 3rem 2rem 3.5rem;
+}
+
+.closing-note {
+  max-width: 340px;
+  margin: 0 auto 2rem;
+  opacity: 0.92;
+}
+
+.closing .eyebrow {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.closing-monogram {
+  width: 80px;
+  height: 80px;
+  margin: 1rem auto 0.5rem;
+  display: block;
+}
+
+.closing-names {
+  font-size: 1.9rem;
+  line-height: 1.15;
+}
+
+.closing .hashtag {
+  color: var(--gold-light);
+}
+
+.footer {
+  padding: 1.25rem;
+  text-align: center;
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  background: var(--ink);
+  color: rgba(251, 243, 222, 0.7);
+}
+
+/* Animate on scroll: fade-up */
+[data-reveal] {
+  transition: opacity var(--reveal-duration) ease, transform var(--reveal-duration) ease;
+}
+
+.opening-curtain {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  overflow: hidden;
+}
+
+.curtain-panel {
+  width: 50%;
+  height: 100%;
+  background: linear-gradient(90deg, var(--slate-deep), var(--slate), var(--slate-deep));
+  animation-duration: var(--curtain-duration);
+  animation-delay: var(--curtain-hold);
+  animation-timing-function: cubic-bezier(0.65, 0, 0.2, 1);
+  animation-fill-mode: both;
+}
+
+.curtain-left { animation-name: curtain-open-left; }
+.curtain-right { animation-name: curtain-open-right; }
+
+@keyframes curtain-open-left { to { transform: translateX(-100%); } }
+@keyframes curtain-open-right { to { transform: translateX(100%); } }
+
+.invitation-opening :is(h1, h2, h3, p, blockquote, .person) {
+  opacity: 0;
+}
+
+/* Foto muncul dulu, disusul nama dan keterangan setiap pengantin. */
+.person[data-reveal] {
+  opacity: 1;
+  transform: none;
+}
+
+.person[data-reveal] > * {
+  transition: opacity var(--reveal-duration) ease, transform var(--reveal-duration) ease;
+}
+
+.person[data-reveal="hidden"] > * {
+  opacity: 0;
+  transform: translateY(24px);
+}
+
+.person[data-reveal="shown"] > * {
+  opacity: 1;
+  transform: none;
+}
+
+.person > :nth-child(2) { transition-delay: var(--reveal-stagger); }
+.person > :nth-child(3) { transition-delay: calc(var(--reveal-stagger) * 2); }
+.person > :nth-child(4) { transition-delay: calc(var(--reveal-stagger) * 3); }
+
+.couple-name-part { display: block; }
+.couple-name-part:nth-child(2) { transition-delay: var(--reveal-stagger); }
+.couple-name-part:nth-child(3) { transition-delay: calc(var(--reveal-stagger) * 2); }
+
+[data-reveal="hidden"] {
+  opacity: 0;
+  transform: translateY(24px);
+}
+
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .curtain-panel {
+    animation-duration: 0.01s;
+    animation-delay: 0s;
+  }
+
+  [data-reveal],
+  .person[data-reveal] > * {
+    transition: none;
+  }
+
+  .person[data-reveal="hidden"] > * {
+    opacity: 1;
+    transform: none;
+  }
+  .cover-content,
+  .invitation {
+    animation: none;
+  }
+
+  [data-reveal="hidden"] {
+    opacity: 1;
+    transform: none;
+  }
+}
