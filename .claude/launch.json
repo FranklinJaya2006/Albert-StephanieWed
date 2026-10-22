@@ -6,6 +6,12 @@
       "runtimeExecutable": "npm",
       "runtimeArgs": ["run", "dev", "--workspace=web"],
       "port": 5173
+    },
+    {
+      "name": "booth",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev", "--workspace=booth"],
+      "port": 5175
     }
   ]
 }

@@ -1,0 +1,14 @@
+.git
+.github
+.claude
+**/node_modules
+**/dist
+**/.env
+**/.env.*
+apps/back/uploads
+
+# Photo originals: the app only references the *-web.jpg versions, so don't ship the full-size
+# files (tens of MB, and they'd be publicly downloadable). Name new originals X.jpg and their
+# web versions X-web.jpg, or they will be missing from the production image.
+apps/web/public/*.jpg
+!apps/web/public/*-web.jpg

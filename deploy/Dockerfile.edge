@@ -1,0 +1,20 @@
+# Public entry point: Caddy (automatic HTTPS) serving the invitation and the booth as static
+# files, and proxying /api and n8n. Build context: repo root.
+FROM node:24-alpine AS build
+WORKDIR /repo
+COPY package.json package-lock.json ./
+COPY apps/back/package.json apps/back/
+COPY apps/web/package.json apps/web/
+COPY apps/booth/package.json apps/booth/
+RUN npm ci -w web -w booth
+COPY apps/web apps/web
+COPY apps/booth apps/booth
+RUN npm run build -w web && npm run build -w booth
+
+FROM caddy:2-alpine
+COPY deploy/Caddyfile /etc/caddy/Caddyfile
+COPY --from=build /repo/apps/web/dist /srv/web
+COPY --from=build /repo/apps/booth/dist /srv/booth
+# Fail the build (not the live server) if the Caddyfile is invalid.
+RUN DOMAIN_WEB=web.example.test DOMAIN_BOOTH=booth.example.test DOMAIN_N8N=n8n.example.test \
+    ACME_EMAIL=ci@example.test caddy validate --config /etc/caddy/Caddyfile --adapter caddyfile

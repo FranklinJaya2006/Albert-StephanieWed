@@ -9,7 +9,7 @@
   --reveal-stagger: 0.45s;
   --arrow-duration: 2.2s;
   --ivory: #fbf3de;
-  --paper: #0d0c0a;
+  --paper: #fffbf0;
   --slate: #708191;
   --slate-deep: #4f5d6b;
   --ink: #2b333b;
@@ -19,7 +19,7 @@
   --gold-light: #e6d3ad;
   --line: #ddd4c1;
 
-  --photo-placeholder: none;
+  --photo-placeholder: radial-gradient(120% 90% at 30% 15%, #b9c3cc 0%, #708191 45%, #4f5d6b 100%);
   --photo-tint: rgba(79, 93, 107, 0.22);
 
   /* Playfair Display italic is reserved for the couple's names; everything else is Montserrat. */
@@ -28,8 +28,11 @@
 
   color-scheme: light;
   color: var(--ink);
-  background: var(--ivory);
-  font: 15px/1.7 var(--sans);
+  background: var(--slate);
+  /* Fluid base size: nearly every size below is in rem, so the whole page scales with this.
+     15.5px on small phones (keeps .72rem labels ≥11px), 16px at 390px, up to 18px on large
+     phones/tablets; desktop override further down. */
+  font: clamp(15.5px, 4.1vw, 18px)/1.7 var(--sans);
   -webkit-font-smoothing: antialiased;
 }
 
@@ -39,8 +42,7 @@
 
 body {
   margin: 0;
-  background: var(--ivory);
-  overscroll-behavior-y: none;
+  background: var(--slate);
 }
 
 h1,
@@ -77,8 +79,8 @@ a {
 }
 
 .ornament {
-  width: 180px;
-  height: 33px;
+  width: 12rem;
+  height: 2.2rem;
   display: block;
   margin: 1.25rem auto 1.75rem;
   color: var(--gold);
@@ -119,7 +121,7 @@ a {
   border-color: rgba(255, 255, 255, 0.7);
   color: #fff;
   padding: 1rem 3rem;
-  font-size: 0.68rem;
+  font-size: 0.72rem;
   letter-spacing: 0.34em;
   background: rgba(33, 40, 48, 0.15);
   backdrop-filter: blur(4px);
@@ -136,7 +138,6 @@ a {
 
 /* Photo slots */
 .photo {
-  background-color: var(--ivory);
   position: relative;
   background-image: var(--photo-placeholder);
   background-size: cover;
@@ -144,12 +145,17 @@ a {
   overflow: hidden;
 }
 
-.photo::after {
+/* Tint only the empty placeholders; real photos get a light lift so they look bright. */
+.photo[data-empty]::after {
   content: "";
   position: absolute;
   inset: 0;
   background: var(--photo-tint);
   mix-blend-mode: multiply;
+}
+
+.photo:not([data-empty]) {
+  filter: brightness(1.06) saturate(1.1) contrast(1.03);
 }
 
 /* Monogram */
@@ -275,7 +281,7 @@ a {
 /* Cover */
 .cover {
   position: relative;
-  max-width: 480px;
+  max-width: 32rem;
   min-height: 100svh;
   margin: 0 auto;
   display: flex;
@@ -289,6 +295,8 @@ a {
 .cover-photo {
   position: absolute;
   inset: 0;
+  background-size: max(110%, 82.5svh) auto;
+  background-position: 35% top;
   transform: scaleX(-1);
 }
 
@@ -316,8 +324,8 @@ a {
 }
 
 .cover-monogram {
-  width: 120px;
-  height: 120px;
+  width: 8rem;
+  height: 8rem;
   margin: 1.25rem auto 1rem;
   display: block;
 }
@@ -366,8 +374,8 @@ a {
 }
 
 .cover-next svg {
-  width: 18px;
-  height: 18px;
+  width: 1.2rem;
+  height: 1.2rem;
   stroke: currentColor;
   stroke-width: 1.8;
   stroke-linecap: round;
@@ -386,7 +394,7 @@ a {
 
 /* Invitation page */
 .invitation {
-  max-width: 480px;
+  max-width: 32rem;
   margin: 0 auto;
   background: var(--ivory);
   overflow: hidden;
@@ -402,6 +410,10 @@ a {
   border-top: 1px solid var(--line);
 }
 
+.section + .section.couple {
+  border-top: none;
+}
+
 .section {
   position: relative;
 }
@@ -413,8 +425,8 @@ a {
 /* Corner floral accents — faint and multiplied into the cream so they read as decoration. */
 .florals {
   position: absolute;
-  width: 130px;
-  height: 130px;
+  width: 8.5rem;
+  height: 8.5rem;
   pointer-events: none;
   opacity: 0.55;
   mix-blend-mode: multiply;
@@ -479,7 +491,7 @@ a {
 
 .lead {
   color: var(--muted);
-  max-width: 340px;
+  max-width: 23rem;
   margin: 0 auto;
 }
 
@@ -502,7 +514,7 @@ a {
 
 .quote {
   margin: 0 auto;
-  max-width: 340px;
+  max-width: 23rem;
   font-weight: 300;
   font-size: 0.95rem;
   line-height: 1.8;
@@ -520,7 +532,7 @@ a {
 
 /* Groom & bride */
 .person-photo {
-  width: 190px;
+  width: min(12.5rem, 70%);
   aspect-ratio: 3 / 4;
   margin: 0 auto 1.5rem;
   border-radius: 0;
@@ -592,7 +604,7 @@ a {
 }
 
 .countdown-label {
-  font-size: 0.65rem;
+  font-size: 0.7rem;
   letter-spacing: 0.12em;
   text-transform: uppercase;
   opacity: 0.8;
@@ -673,8 +685,109 @@ a {
 
 .story {
   color: var(--muted);
-  max-width: 340px;
+  max-width: 23rem;
   margin: 0.75rem auto 2rem;
+}
+
+/* Editorial gallery — staggered widths and heights, never a uniform grid. */
+.gallery-grid {
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  gap: 1.4rem;
+  margin-top: 2.5rem;
+  padding: 8px;
+}
+
+.gallery-photo {
+  position: relative;
+  align-self: start;
+  border: 1px solid rgba(184, 151, 95, 0.75);
+  padding: 5px;
+  background: rgba(255, 253, 248, 0.06);
+}
+
+.gallery-photo:nth-child(1) {
+  grid-column: 1 / 8;
+  aspect-ratio: 4 / 5;
+  border-radius: 90px 90px 2px 2px;
+}
+
+.gallery-photo:nth-child(2) {
+  grid-column: 8 / 13;
+  aspect-ratio: 3 / 5;
+  margin-top: 2.5rem;
+  border-radius: 2px;
+}
+
+.gallery-photo:nth-child(3) {
+  grid-column: 1 / 6;
+  aspect-ratio: 3 / 4;
+  border-radius: 2px;
+}
+
+.gallery-photo:nth-child(4) {
+  grid-column: 6 / 13;
+  aspect-ratio: 4 / 3;
+  margin-top: 1.5rem;
+  border-radius: 2px;
+}
+
+.gallery-photo:nth-child(5) {
+  grid-column: 1 / 9;
+  aspect-ratio: 16 / 10;
+  border-radius: 60px 60px 2px 2px;
+}
+
+.gallery-photo:nth-child(6) {
+  grid-column: 9 / 13;
+  aspect-ratio: 3 / 4;
+  margin-top: 2.25rem;
+  border-radius: 2px;
+}
+
+/* Outer hairline + gold beads sitting on the four corners of each tile. */
+.gallery-photo::after {
+  content: "";
+  position: absolute;
+  inset: -7px;
+  border: 1px solid rgba(184, 151, 95, 0.55);
+  border-radius: inherit;
+  pointer-events: none;
+}
+
+.gallery-photo::before {
+  content: "";
+  position: absolute;
+  inset: -7px;
+  border-radius: inherit;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 0 0, var(--gold) 0 1.7px, transparent 1.8px),
+    radial-gradient(circle at 100% 0, var(--gold) 0 1.7px, transparent 1.8px),
+    radial-gradient(circle at 0 100%, var(--gold) 0 1.7px, transparent 1.8px),
+    radial-gradient(circle at 100% 100%, var(--gold) 0 1.7px, transparent 1.8px);
+  background-repeat: no-repeat;
+}
+
+/* Two full-bleed portrait photos on the invitation; the rest live on /gallery. */
+.gallery-preview {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 2.5rem -2rem 0;
+}
+
+.gallery-preview-photo {
+  width: 100%;
+  aspect-ratio: 3 / 4;
+}
+
+.view-more {
+  margin-top: 2.5rem;
+}
+
+.gallery-page {
+  min-height: 100svh;
 }
 
 /* Kind words */
@@ -704,7 +817,7 @@ a {
   padding: 0.7rem 0.85rem;
   border: 1px solid var(--line);
   border-radius: 2px;
-  background: #fff;
+  background: var(--paper);
   color: var(--ink);
   text-transform: none;
   letter-spacing: normal;
@@ -734,14 +847,11 @@ a {
 /* Closing */
 .closing {
   position: relative;
-  min-height: 640px;
+  min-height: min(42rem, 100svh);
   display: flex;
   align-items: flex-end;
   color: #fff;
   text-align: center;
-  overflow: hidden;
-  isolation: isolate;
-  background: var(--slate);
 }
 
 .closing-photo {
@@ -750,10 +860,12 @@ a {
 }
 
 .closing-photo::before {
-  content: none;
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background: linear-gradient(to bottom, rgba(33, 40, 48, 0.15) 20%, rgba(33, 40, 48, 0.8) 100%);
 }
-
-.closing-photo::after { content: none; }
 
 .closing-content {
   position: relative;
@@ -763,7 +875,7 @@ a {
 }
 
 .closing-note {
-  max-width: 340px;
+  max-width: 23rem;
   margin: 0 auto 2rem;
   opacity: 0.92;
 }
@@ -773,8 +885,8 @@ a {
 }
 
 .closing-monogram {
-  width: 80px;
-  height: 80px;
+  width: 5.5rem;
+  height: 5.5rem;
   margin: 1rem auto 0.5rem;
   display: block;
 }
@@ -793,7 +905,7 @@ a {
   text-align: center;
   font-size: 0.72rem;
   letter-spacing: 0.08em;
-  background: var(--slate);
+  background: var(--ink);
   color: rgba(251, 243, 222, 0.7);
 }
 
@@ -881,12 +993,7 @@ a {
 /* Opening timing and desktop layout restored from the combined-page design. */
 :root { --opening-duration: 1.8s; }
 .desktop-photo-panel { display: none; }
-.invitation-page-panel {
-  min-width: 0;
-  position: relative;
-  isolation: isolate;
-  overflow: clip;
-}
+.invitation-page-panel { min-width: 0; }
 .cover-next { width: 44px; height: 44px; padding: 0; border-radius: 50%; font-family: inherit; cursor: pointer; }
 .cover-next:disabled { cursor: wait; }
 .cover-spinner { width: 16px; height: 16px; border: 1.5px solid rgba(255,255,255,.3); border-top-color: #fff; border-radius: 50%; animation: cover-spin 1s linear infinite; }
@@ -894,11 +1001,13 @@ a {
 @keyframes cover-spin { to { transform: rotate(360deg); } }
 @keyframes cover-open-fade { 0%,55%,100% { opacity: 1; } 80% { opacity: .7; } }
 @media (min-width: 1024px) {
-  .desktop-photo-panel { display: block; position: fixed; inset: 0 auto 0 0; width: 55vw; height: 100dvh; overflow: hidden; }
-  .desktop-photo-image { position: absolute; inset: 0 auto 0 0; width: 55vw; height: 100%; z-index: 1; background-size: cover; background-repeat: no-repeat; background-position: center top; transform: scaleX(-1); }
-  .desktop-photo-panel::before { content: none; }
-  .desktop-photo-copy { position: relative; z-index: 2; height: 100%; display: flex; flex-direction: column; justify-content: center; padding: clamp(2rem,4vw,5rem); padding-right: calc(.5vw + clamp(2rem,4vw,5rem)); color: var(--ivory); text-shadow: 0 2px 16px rgba(0,0,0,.25); }
-  .desktop-photo-eyebrow { font-size: .8rem; letter-spacing: .3em; text-transform: uppercase; margin-bottom: 1.5rem; }
+  /* The invitation column is 45vw wide here, so scale the base size with the viewport. */
+  :root { font-size: clamp(16px, 1.25vw, 20px); }
+  .desktop-photo-panel { display: block; position: fixed; inset: 0 auto 0 0; width: 55vw; height: 100dvh; overflow: hidden; background: var(--slate-deep); }
+  .desktop-photo-image { position: absolute; inset: 0 auto 0 0; width: 100%; height: 100%; background-size: max(110%, 82.5dvh) auto; background-repeat: no-repeat; background-position: 35% top; transform: scaleX(-1); filter: contrast(.86) saturate(.9) brightness(1.03) sepia(.08); }
+  .desktop-photo-panel::after { content: none; }
+  .desktop-photo-copy { position: relative; z-index: 1; height: 100%; display: flex; flex-direction: column; justify-content: center; padding: clamp(2rem,4vw,5rem); padding-right: calc(.5vw + clamp(2rem,4vw,5rem)); color: #f2eee8; text-shadow: 0 1px 3px rgba(30, 27, 24, 0.32); }
+  .desktop-photo-eyebrow { color: inherit; font-weight: 600; text-shadow: inherit; font-size: 1.5rem; letter-spacing: .3em; text-transform: uppercase; margin-bottom: 1.5rem; }
   .desktop-photo-names { font-family: var(--names); font-style: italic; font-weight: 400; font-size: clamp(3.5rem,5.8vw,5rem); line-height: 1.15; margin-bottom: 2rem; overflow-wrap: anywhere; }
   .desktop-photo-names span { display: block; }
   .desktop-photo-message { max-width: 28rem; font-family: var(--names); font-style: italic; font-size: clamp(1rem,1.3vw,1.2rem); line-height: 1.8; text-wrap: pretty; }
@@ -916,35 +1025,201 @@ a {
 
 
 
-.love-story-photo {
-  background-position: center 30%;
-  width: 100%;
-  max-width: none;
-  aspect-ratio: 1 / 1;
-  margin: 0 auto 1.5rem;
-  border-radius: 0;
+
+
+
+
+
+
+
+
+/* Botanical invitation details. Timing controls stay together here. */
+:root {
+  --bloom-duration: 7.5s;
+  --petal-open-duration: 2.2s;
 }
-
-
-
-
-
-
-
-
-
-.couple-photo-row {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  gap: clamp(6px, 1vw, 12px);
-  width: 100%;
+.invitation-page-panel { position: relative; isolation: isolate; overflow: clip; }
+.invitation-awaiting > * { visibility: hidden; }
+.flower-reveal {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  background: var(--ivory);
+  color: var(--gold-deep);
+  animation: flower-reveal-exit var(--bloom-duration) ease both;
 }
-.couple-row-photo {
-  width: 100%;
-  min-width: 0;
-  aspect-ratio: 3 / 4;
+.flower-reveal::before,
+.flower-reveal::after {
+  content: "";
+  position: absolute;
+  inset: 20px;
+  border: 1px solid rgba(184,151,95,.35);
+  border-radius: 50% 50% 2px 2px;
+  pointer-events: none;
 }
+.flower-reveal::after { inset: 28px; border-color: rgba(184,151,95,.17); }
+.bloom { width: min(68vw, 350px); flex: 0 0 auto; color: var(--gold); overflow: visible; }
+.bloom-petal {
+  fill: #f0e0c4;
+  fill-opacity: .72;
+  stroke: currentColor;
+  stroke-width: .7;
+  transform-origin: 0 0;
+  animation: petal-unfold var(--petal-open-duration) cubic-bezier(.2,.65,.2,1) both;
+  animation-delay: var(--petal-delay);
+}
+.bloom-petal-1 { fill: #fffaf0; fill-opacity: .9; }
+.flower-reveal-orbit {
+  position: absolute;
+  width: var(--orbit-size);
+  aspect-ratio: 1;
+  overflow: visible;
+  rotate: -90deg;
+}
+.flower-reveal { --orbit-size: min(94vw, 540px, 64svh); }
+.flower-reveal .bloom { width: min(84vw, 450px, 52svh); }
+@media (min-width: 1024px) {
+  .flower-reveal { --orbit-size: min(42vw, 540px, 64svh); }
+  .flower-reveal .bloom { width: min(36vw, 450px, 52svh); }
+}
+.flower-reveal-caption { text-align: center; margin-top: 2.5rem; }
+.flower-reveal-caption > span { display: inline-block; font-size: .8rem; text-transform: uppercase; letter-spacing: .3em; }
+.flower-reveal-caption p { font-family: var(--names); font-style: italic; font-size: clamp(2.3rem,9vw,3.3rem); line-height: 1.2; color: var(--slate-deep); margin-top: .8rem; }
 
+/* Luxe opening sequence (~7.5s): frame → gold ring draws → bloom rises and unfolds →
+   sparkles → caption tracks in → names shimmer → soft zoom-out exit. */
+.flower-reveal::before,
+.flower-reveal::after { animation: reveal-frame-in 1.8s ease both; }
+.flower-reveal::after { animation-delay: .35s; }
+.flower-reveal-glow {
+  position: absolute;
+  width: min(115vw, 660px);
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(230,211,173,.6) 0%, rgba(230,211,173,.18) 45%, transparent 70%);
+  animation: reveal-glow 5.5s .6s ease-in-out both;
+}
+.orbit-line {
+  fill: none;
+  stroke: var(--gold);
+  stroke-width: .6;
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  animation: orbit-draw 2.6s .3s cubic-bezier(.65,0,.35,1) forwards;
+}
+.orbit-line-inner { stroke-opacity: .45; animation-delay: .8s; }
+.flower-reveal-sparkles {
+  position: absolute;
+  width: var(--orbit-size);
+  aspect-ratio: 1;
+}
+.flower-reveal-sparkles span {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 11px;
+  height: 11px;
+  margin: -5.5px 0 0 -5.5px;
+  background: var(--gold);
+  clip-path: polygon(50% 0, 60% 40%, 100% 50%, 60% 60%, 50% 100%, 40% 60%, 0 50%, 40% 40%);
+  --orbit-offset: translateY(calc(var(--orbit-size) / -2));
+  transform: rotate(var(--angle)) var(--orbit-offset) scale(.2);
+  opacity: 0;
+  animation: sparkle-twinkle 1.8s var(--delay) ease-in-out 2;
+}
+.flower-reveal .bloom { animation: bloom-rise 4.2s .4s cubic-bezier(.2,.7,.2,1) both; }
+.flower-reveal .bloom-petal {
+  animation-duration: 3s;
+  animation-delay: calc(var(--petal-delay) * 2.4 + .7s);
+}
+.flower-reveal-caption > span { animation: caption-track-in 1.8s 2s cubic-bezier(.2,.7,.2,1) both; }
+.flower-reveal-caption p {
+  background: linear-gradient(110deg, var(--slate-deep) 40%, var(--gold) 50%, var(--slate-deep) 60%);
+  background-size: 250% 100%;
+  background-position: 100% 0;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: caption-blur-in 1.8s 2.6s ease both, name-shimmer 2.2s 3.9s ease-in-out both;
+}
+@keyframes reveal-frame-in { from { opacity: 0; transform: scale(.96); } to { opacity: 1; transform: none; } }
+@keyframes reveal-glow { 0% { opacity: 0; scale: .6; } 45% { opacity: 1; scale: 1; } 100% { opacity: .75; scale: 1.08; } }
+@keyframes orbit-draw { to { stroke-dashoffset: 0; } }
+@keyframes sparkle-twinkle {
+  0%, 100% { opacity: 0; transform: rotate(var(--angle)) var(--orbit-offset) scale(.2); }
+  50% { opacity: 1; transform: rotate(var(--angle)) var(--orbit-offset) scale(1); }
+}
+@keyframes bloom-rise { from { opacity: 0; transform: scale(.78) rotate(-28deg); } to { opacity: 1; transform: none; } }
+@keyframes caption-track-in { from { opacity: 0; letter-spacing: .9em; filter: blur(4px); } to { opacity: 1; letter-spacing: .3em; filter: none; } }
+@keyframes caption-blur-in { from { opacity: 0; transform: translateY(12px); filter: blur(8px); } to { opacity: 1; transform: none; filter: none; } }
+@keyframes name-shimmer { from { background-position: 100% 0; } to { background-position: 0 0; } }
+@keyframes petal-unfold {
+  from { transform: scale(.08,.12); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+@keyframes flower-reveal-exit {
+  0%, 82% { opacity: 1; transform: none; filter: none; }
+  100% { opacity: 0; transform: scale(1.06); filter: blur(6px); }
+}
+@keyframes bloom-caption { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
 
+/* Framing and rhythm, without changing the selected photo crops. */
+.section { padding-block: clamp(3.5rem,8vw,5.5rem); }
+.section-title { font-family: var(--names); font-size: clamp(1.8rem,4vw,2.25rem); letter-spacing: .01em; margin-bottom: 1.6rem; }
+.welcome { padding-top: 5rem; }
+.welcome::before { content: ""; position: absolute; inset: 18px; border: 1px solid rgba(184,151,95,.28); border-radius: 8.5rem 8.5rem 2px 2px; pointer-events: none; }
+.welcome .lead { font-size: .83rem; line-height: 1.95; }
+.welcome .quote { font-size: .9rem; line-height: 1.9; }
+.person + .couple-amp { display: block; margin-block: 1.6rem; }
+.person-photo { box-shadow: 0 14px 35px rgba(43,51,59,.1); outline: 1px solid rgba(184,151,95,.45); outline-offset: 7px; }
+.love-story-photo { width: 80%; margin-inline: auto; aspect-ratio: 3 / 4; border-radius: 6rem 6rem 3px 3px; outline: 1px solid rgba(184,151,95,.3); outline-offset: 7px; margin-bottom: 2rem; }
+.countdown-section { background: #f4ecd9; }
+.countdown-unit { background: rgba(255,255,255,.42); border: 1px solid rgba(184,151,95,.25); border-radius: 2rem 2rem 3px 3px; padding: 1rem .5rem; min-width: 0; flex: 1; }
+.countdown { max-width: 26rem; margin-inline: auto; gap: .5rem; }
+.countdown-value { font-family: var(--names); font-size: clamp(1.8rem,5vw,2.5rem); color: var(--slate-deep); }
+.event-card { position: relative; border-radius: 4.5rem 4.5rem 5px 5px; box-shadow: 0 14px 28px rgba(24,33,42,.12); transition: box-shadow .3s ease, translate .3s ease; }
+.event-card:focus-within { box-shadow: 0 18px 38px rgba(24,33,42,.22); }
+.event-label { font-family: var(--names); font-size: 1.8rem; }
+.event-link { display: inline-flex; align-items: center; justify-content: center; gap: .7rem; padding: .5rem 1rem; border: 1px solid rgba(184,151,95,.45); border-radius: 99px; text-decoration: none; }
+.event-link::after { content: "↗"; }
+.button { position: relative; min-height: 44px; transition: background .25s ease, color .25s ease, box-shadow .25s ease, translate .25s ease; }
+.button:focus-visible, .event-link:focus-visible { outline: 2px solid var(--gold-deep); outline-offset: 5px; }
+.button:active { translate: 0 1px; }
+.wish-form input, .wish-form select, .wish-form textarea { border-radius: 6px; background: #fff; min-width: 0; width: 100%; transition: border-color .25s ease, box-shadow .25s ease; }
+.wish-form input:focus, .wish-form select:focus, .wish-form textarea:focus { border-color: var(--gold-deep); box-shadow: 0 0 0 4px rgba(184,151,95,.1); }
+/* Background-image photos have no intrinsic height, so each slot needs an aspect ratio. */
+.couple-row-photo { width: 100%; aspect-ratio: 2 / 3; border-radius: 3px; outline: 1px solid rgba(184,151,95,.25); outline-offset: 5px; }
+.couple-photo-row { display: flex; flex-direction: column; align-items: center; gap: 1.6rem; margin-block: 1.5rem; }
+.couple-photo-row .couple-row-photo { width: 80%; }
 
-
+/* The RSVP card opens like a small botanical invitation. */
+.reservation-card { margin-top: 2rem; border: 1px solid rgba(184,151,95,.55); border-radius: 6rem 6rem 6px 6px; background: #fffaf0; box-shadow: 0 14px 38px rgba(79,93,107,.08); overflow: hidden; }
+.reservation-header { display: flex; align-items: center; flex-direction: column; padding: 1.8rem 1.2rem; gap: .8rem; color: var(--ink); }
+.reservation-header .bloom { width: 5.5rem; height: 5.5rem; }
+.reservation-header .bloom-petal { animation: none; }
+.reservation-header-eyebrow { color: var(--gold-deep); font-size: .75rem; text-transform: uppercase; letter-spacing: .2em; }
+.reservation-header-title { font-family: var(--names); font-style: italic; font-size: 1.4rem; line-height: 1.4; max-width: 16rem; }
+.reservation-details { padding: 0 clamp(1rem,3vw,2rem) 2rem; }
+.reservation-details .wish-form { margin-top: 1rem; }
+.reservation-details .thank-you { font-family: var(--names); font-size: 1.3rem; color: var(--slate-deep); text-align: center; }
+@media (hover: hover) {
+  .event-card:hover { translate: 0 -4px; box-shadow: 0 18px 38px rgba(24,33,42,.2); }
+  .button:hover { box-shadow: 0 5px 16px rgba(79,93,107,.14); }
+}
+@media (min-width: 1024px) { .flower-reveal { left: 55%; } }
+@media (max-width: 374px) { .section { padding-inline: 1.25rem; } .gallery-preview { margin-inline: -1.25rem; } .countdown { gap: .3rem; } .countdown-label { font-size: .75rem; letter-spacing: .06em; } }
+@media (prefers-reduced-motion: reduce) {
+  .flower-reveal { animation-duration: .01s; }
+  .bloom-petal, .flower-reveal-caption, .reservation-details { animation: none; }
+  .flower-reveal::before, .flower-reveal::after, .flower-reveal-glow, .flower-reveal .bloom,
+  .flower-reveal-caption > span, .flower-reveal-caption p { animation: none; }
+  .orbit-line { animation: none; stroke-dashoffset: 0; }
+  .flower-reveal-sparkles { display: none; }
+  .event-card, .button { transition: none; }
+  .event-card:hover { translate: none; }
+}

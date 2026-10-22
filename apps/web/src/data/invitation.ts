@@ -35,7 +35,7 @@ export const invitation = {
     time: "09.30 WITA",
     venue: "Gereja Mawar Sharon",
     address: "Jl. Metro Tj. Bunga No. 02, Makassar",
-    mapsQuery: "\?q=GMS+Makassar+Barat",
+    mapsQuery: "?q=GMS+Makassar+Barat",
   },
   reception: {
     label: "Reception",
@@ -43,7 +43,7 @@ export const invitation = {
     time: "18.00 WITA",
     venue: "New Bambuden (Bambuden III), 2th Floor",
     address: "Jl. G. Latimojong No. 62, Makassar",
-    mapsQuery: "\?q=Bambuden+3+(New+Bambuden)",
+    mapsQuery: "?q=Bambuden+3+(New+Bambuden)",
   },
   photos: {
     loveStory: "Portrait-web.jpg",

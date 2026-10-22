@@ -3,12 +3,11 @@
 ## Project: Birdies-Gift (Wedding Invitation + n8n Automation)
 
 Digital wedding invitation project. Core twist: guest data (name, phone, title/greeting) lives
-in a MySQL database (imported from a spreadsheet), and n8n drives the send flow:
+in an n8n Data Table (no SQL database anywhere), and n8n drives the send flow:
 
 ```
 n8n (trigger) -> takes a phone number
-              -> calls backend API to look up the matching guest by phone
-              -> backend returns { name, phone, title, ... }
+              -> normalizes it (Code node) and looks up the guest in the Data Table
               -> n8n fills a message/file template (e.g. "Yth. Bapak/Ibu {{name}}")
               -> n8n sends it via WAHA (WhatsApp HTTP API)
 ```
@@ -16,11 +15,12 @@ n8n (trigger) -> takes a phone number
 ### Tech stack
 
 - **Language:** TypeScript everywhere (backend + tooling).
-- **Backend:** Fastify + `mysql2` (raw SQL, no ORM). Table created from `apps/back/schema.sql`.
-- **Database:** MySQL (chosen for being lightweight).
-- **Automation:** n8n (self-hosted via Docker), calling the backend's HTTP API.
+- **Backend:** Fastify, photo booth only. No database: photos are files on disk.
+- **Guest data:** n8n Data Table (guest list is small; photos must never go in it — size limit).
+- **Automation:** n8n (self-hosted via Docker) reads the Data Table directly.
 - **WhatsApp sending:** WAHA (WhatsApp HTTP API, self-hosted via Docker).
-- **Orchestration:** Docker Compose (mysql, backend, n8n, waha).
+- **Hosting:** one VPS running `docker-compose.prod.yml` (Caddy edge + back + n8n + waha),
+  deployed by GitHub Actions (`.github/workflows/ci-cd.yml`) via GHCR images.
 - **Guest-facing website:** Vite + React + TypeScript SPA (2 pages, no SSR — chosen for
   being lightweight since the site is intentionally small).
 
@@ -28,8 +28,7 @@ n8n (trigger) -> takes a phone number
 
 ```
 apps/
-  back/           TypeScript API (Fastify + mysql2). Source of truth for guest data,
-                   exposes the lookup endpoint n8n calls. (Named `back`, not `backend`.)
+  back/           TypeScript API (Fastify) for the photo booth only. (Named `back`, not `backend`.)
   web/             Vite + React + TypeScript SPA, 2 pages (structure follows the Invitato
                    reference template the user supplied):
                    - "/"     Cover — photo, A&T monogram, "Let's Begin"
@@ -39,24 +38,44 @@ apps/
                              Corner flower accents come from components/Florals.tsx.
                    - "/gallery" All gallery photos ("View More" from /rsvp), keeps ?to=
                    All placeholder content + photo paths live in src/data/invitation.ts.
+  booth/           Separate photo-booth app (Vite + React + TS, dev port 5175), same theme.
+                   Guests scan a QR → enter a name → camera → pick "Frame" or "Warm Film" →
+                   capture → upload. Private results at /admin?key=<BOOTH_ADMIN_KEY> so the
+                   couple can pick the best shot (username = who took it). Filters are in
+                   src/filters.ts and drawn identically for live preview and saved photo.
+                   Camera needs https (or localhost).
 n8n/workflows/     Exported n8n workflow JSON (added once message/file templates exist).
-docker-compose.yml Local infra: mysql, backend, n8n, waha.
+deploy/            Dockerfile.back, Dockerfile.edge (builds web + booth, serves via Caddy), Caddyfile.
+docker-compose.yml        Local dev only: n8n + WAHA.
+docker-compose.prod.yml   VPS stack; values come from the server's .env (see .env.prod.example).
+.github/workflows/ci-cd.yml  PR: lint + build + image build. main: push images, deploy over SSH
+                   (skipped until repo variable DEPLOY_ENABLED=true).
 ```
 
 ### Conventions
 
-- Keep the backend's public surface minimal: it exists to serve guest data to n8n, not to be
-  a general-purpose app backend. Don't add endpoints/features n8n doesn't need.
-- Phone numbers are the join key between n8n and the DB — always normalize before comparing
-  (see `normalizePhone` in `apps/back/src/server.ts`) since WhatsApp numbers arrive
-  in inconsistent formats (`08xx`, `+62`, `62xx`, spaces/dashes).
+- Keep the backend's public surface minimal: only the photo-booth endpoints (`/api/booth/*`:
+  public upload, admin-key-gated list/files) plus `/health`. Each photo is `<id>.jpg` + a
+  `<id>.json` sidecar in `UPLOAD_DIR` (default `apps/back/uploads/booth/`, `/data/booth` in
+  Docker); the sidecar is written last. Don't reintroduce a database for this.
+- Phone numbers are the join key in the n8n Data Table — normalize inside n8n (Code node)
+  before comparing, since WhatsApp numbers arrive in inconsistent formats (`08xx`, `+62`,
+  `62xx`, spaces/dashes): strip non-digits, then turn a leading `0` into `62`.
+- Docker/CI could not be run locally (Docker kept off on purpose). The first GitHub Actions run
+  is the real test of the Dockerfiles and the Caddyfile (validated at image build time).
+- Photo originals in `apps/web/public` are named `X.jpg`; only `X-web.jpg` ships (see
+  `.dockerignore`). A new photo used by the app must follow that naming.
 - Don't invent the message/invitation template — the user is providing a reference template
   for the "Yth. Bapak/Ibu ..." wording and file format. Ask before guessing its structure.
 - RSVP submission in `apps/web` doesn't persist anywhere yet (no backend endpoint). Don't
   wire it to the DB without confirming what should be stored.
-- Design: mobile-first, 480px column. Palette is slate blue `#708191` (main) / cream `#fbf3de`
+- Design: mobile-first, 32rem column. Sizing is fluid: the root font-size is
+  `clamp(15.5px, 4.1vw, 18px)` (desktop: `clamp(16px, 1.25vw, 20px)`) and everything else is in
+  rem, so add new sizes in rem — not px — or they won't scale. Palette is slate blue `#708191` (main) / cream `#fbf3de`
   (base) / champagne gold (accent), defined as CSS variables in `apps/web/src/index.css`.
-  Text on the invitation page fades up on scroll (IntersectionObserver in `Rsvp.tsx`, no library). Fonts: Playfair Display Italic 400 only
+  Text on the invitation page fades up on scroll (IntersectionObserver in `Rsvp.tsx`, no library).
+  Opening bloom (`FlowerReveal.tsx`) runs ~7.5s (`--bloom-duration`); it closes only on its own
+  `flower-reveal-exit` animation — pseudo-element animations fire animationend on it too. Fonts: Playfair Display Italic 400 only
   for the couple's names (monogram uses upright Playfair 400), Montserrat for everything else.
   The monogram (`Monogram.tsx`) is letters + leaf sprig only, no background, colored `--ivory`. Ornaments and the monogram
   are hand-made inline SVG — don't pull in external/Canva assets without the user supplying them.

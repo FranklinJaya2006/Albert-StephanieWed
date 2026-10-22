@@ -1,0 +1,387 @@
+/* Same palette and type as the invitation (apps/web): slate blue, cream, champagne gold;
+   Playfair Display italic for names, Montserrat for everything else. */
+:root {
+  --ivory: #fbf3de;
+  --paper: #fffbf0;
+  --slate: #708191;
+  --slate-deep: #4f5d6b;
+  --ink: #2b333b;
+  --muted: #636a71;
+  --gold: #b8975f;
+  --gold-deep: #8a6c3a;
+  --gold-light: #e6d3ad;
+  --line: #ddd4c1;
+
+  --names: "Playfair Display", Georgia, serif;
+  --sans: "Montserrat", "Segoe UI", system-ui, sans-serif;
+
+  color-scheme: light;
+  color: var(--ink);
+  background: var(--slate);
+  font: clamp(15.5px, 4.1vw, 18px)/1.6 var(--sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--slate);
+}
+
+h1,
+h2,
+p {
+  margin: 0;
+}
+
+.screen {
+  max-width: 32rem;
+  min-height: 100svh;
+  margin: 0 auto;
+  padding: max(2.5rem, env(safe-area-inset-top)) 1.5rem max(2rem, env(safe-area-inset-bottom));
+  background: var(--ivory);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.welcome,
+.done,
+.admin-login {
+  justify-content: center;
+  gap: 0.75rem;
+}
+
+.eyebrow {
+  font-size: 0.72rem;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--gold-deep);
+}
+
+.names {
+  font-family: var(--names);
+  font-style: italic;
+  font-weight: 400;
+  font-size: clamp(2.2rem, 9vw, 2.8rem);
+  line-height: 1.2;
+  color: var(--slate-deep);
+}
+
+.date {
+  font-size: 0.8rem;
+  letter-spacing: 0.2em;
+  color: var(--muted);
+}
+
+.divider {
+  width: 4rem;
+  height: 1px;
+  margin: 1rem 0;
+  background: var(--gold);
+}
+
+.title {
+  font-weight: 500;
+  font-size: 1.4rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.lead {
+  max-width: 22rem;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.name-form {
+  width: 100%;
+  max-width: 22rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  margin-top: 1.25rem;
+  text-align: left;
+}
+
+.name-form label {
+  font-size: 0.72rem;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.name-form input {
+  font: inherit;
+  padding: 0.8rem 0.9rem;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: #fff;
+  color: var(--ink);
+}
+
+.name-form input:focus {
+  outline: 2px solid var(--gold-deep);
+  outline-offset: 1px;
+}
+
+.name-form .button {
+  margin-top: 0.75rem;
+}
+
+.button {
+  min-height: 48px;
+  padding: 0.8rem 1.6rem;
+  border: 1px solid var(--slate-deep);
+  border-radius: 999px;
+  background: var(--slate-deep);
+  color: var(--ivory);
+  font: inherit;
+  font-size: 0.8rem;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.button:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
+.button-ghost {
+  background: transparent;
+  color: var(--slate-deep);
+}
+
+.button:focus-visible,
+.link-button:focus-visible,
+.filter-option:focus-visible,
+.icon-button:focus-visible,
+.shutter:focus-visible {
+  outline: 2px solid var(--gold-deep);
+  outline-offset: 3px;
+}
+
+.link-button {
+  border: 0;
+  background: none;
+  padding: 0.25rem;
+  font: inherit;
+  font-size: 0.8rem;
+  color: var(--gold-deep);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+/* Booth */
+.booth {
+  padding-top: max(1rem, env(safe-area-inset-top));
+  gap: 1rem;
+}
+
+.booth-header {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.85rem;
+}
+
+.viewfinder {
+  position: relative;
+  /* Limit width (not height) so the box stays exactly 3:4 — the crop the saved photo uses. */
+  width: min(100%, 62svh * 3 / 4);
+  aspect-ratio: 3 / 4;
+  overflow: hidden;
+  border-radius: 4px;
+  background: var(--slate-deep);
+  outline: 1px solid rgba(184, 151, 95, 0.45);
+  outline-offset: 5px;
+}
+
+.viewfinder video,
+.viewfinder img,
+.frame-overlay {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.viewfinder video.mirrored {
+  transform: scaleX(-1);
+}
+
+.frame-overlay {
+  pointer-events: none;
+}
+
+.camera-error {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+  color: var(--ivory);
+  font-size: 0.9rem;
+}
+
+.filter-picker {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.6rem;
+}
+
+.filter-option {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  padding: 0.7rem 0.6rem;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #fff;
+  color: var(--ink);
+  font: inherit;
+  cursor: pointer;
+}
+
+.filter-option.selected {
+  border-color: var(--gold-deep);
+  background: var(--paper);
+  box-shadow: inset 0 0 0 1px var(--gold-deep);
+}
+
+.filter-label {
+  font-weight: 600;
+  font-size: 0.85rem;
+  letter-spacing: 0.05em;
+}
+
+.filter-hint {
+  font-size: 0.72rem;
+  color: var(--muted);
+}
+
+.controls {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 0.5rem;
+}
+
+.icon-button,
+.icon-button-spacer {
+  width: 3rem;
+  height: 3rem;
+}
+
+.icon-button {
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  background: #fff;
+  color: var(--slate-deep);
+  cursor: pointer;
+}
+
+.icon-button svg {
+  width: 1.4rem;
+  height: 1.4rem;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.shutter {
+  width: 4.5rem;
+  height: 4.5rem;
+  border-radius: 50%;
+  border: 4px solid var(--ivory);
+  background: var(--slate-deep);
+  box-shadow: 0 0 0 2px var(--gold-deep);
+  cursor: pointer;
+}
+
+.shutter:active {
+  transform: scale(0.94);
+}
+
+.shutter:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.review-actions {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+}
+
+.send-error {
+  grid-column: 1 / -1;
+  color: #9b3b2f;
+  font-size: 0.85rem;
+}
+
+/* Admin */
+.admin {
+  max-width: 72rem;
+  min-height: 100svh;
+  margin: 0 auto;
+  padding: 2rem 1.25rem;
+  background: var(--ivory);
+}
+
+.admin-header {
+  display: flex;
+  align-items: baseline;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-bottom: 1.5rem;
+}
+
+.admin-header p {
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.admin-grid {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 14rem), 1fr));
+  gap: 1.25rem;
+}
+
+.admin-card img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 3 / 4;
+  object-fit: cover;
+  border-radius: 4px;
+  background: var(--line);
+}
+
+.admin-name {
+  margin-top: 0.5rem;
+  font-weight: 600;
+}
+
+.admin-meta {
+  font-size: 0.75rem;
+  color: var(--muted);
+}

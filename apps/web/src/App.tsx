@@ -2,11 +2,19 @@ import { BrowserRouter } from 'react-router-dom'
 import { useEffect, useState } from 'react'
 import Onboarding from './pages/Onboarding'
 import Rsvp from './pages/Rsvp'
+import FlowerReveal from './components/FlowerReveal'
 import { invitation } from './data/invitation'
 
 function App() {
   const [opened, setOpened] = useState(false)
+  const [blooming, setBlooming] = useState(false)
   const [scrollRequest, setScrollRequest] = useState(0)
+  useEffect(() => {
+    if (!blooming) return
+    const previous = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    return () => { document.body.style.overflow = previous }
+  }, [blooming])
   useEffect(() => {
     if (!opened) return
     let scrollFrame = 0
@@ -34,8 +42,13 @@ function App() {
           </div>
         </aside>
         <main className="invitation-page-panel">
-          <Onboarding onOpen={() => { setOpened(true); setScrollRequest((value) => value + 1) }} />
-          {opened && <Rsvp />}
+          <Onboarding onOpen={() => {
+            setOpened(true)
+            setBlooming(true)
+            setScrollRequest((value) => value + 1)
+          }} />
+          {opened && <Rsvp ready={!blooming} />}
+          {blooming && <FlowerReveal onComplete={() => setBlooming(false)} />}
         </main>
       </div>
     </BrowserRouter>

@@ -1,0 +1,32 @@
+# Photo-booth API (apps/back). Build context: repo root.
+FROM node:24-alpine AS base
+WORKDIR /repo
+# Every workspace manifest must be present so `npm ci` can validate the root lockfile.
+COPY package.json package-lock.json ./
+COPY apps/back/package.json apps/back/
+COPY apps/web/package.json apps/web/
+COPY apps/booth/package.json apps/booth/
+
+FROM base AS prod-deps
+RUN npm ci -w back --omit=dev
+
+FROM base AS build
+RUN npm ci -w back
+COPY tsconfig.base.json ./
+COPY apps/back apps/back
+RUN npm run build -w back
+
+FROM node:24-alpine
+ENV NODE_ENV=production PORT=4000 UPLOAD_DIR=/data/booth
+WORKDIR /repo
+COPY --from=prod-deps /repo/node_modules node_modules
+COPY --from=build /repo/apps/back/dist apps/back/dist
+COPY apps/back/package.json apps/back/
+# A named volume mounted on /data inherits this ownership on first use.
+RUN mkdir -p /data/booth && chown -R node:node /data
+USER node
+WORKDIR /repo/apps/back
+EXPOSE 4000
+HEALTHCHECK --interval=15s --timeout=3s --start-period=10s \
+  CMD wget -q -O /dev/null http://127.0.0.1:4000/health || exit 1
+CMD ["node", "dist/server.js"]

@@ -7,6 +7,7 @@ import Monogram from "../components/Monogram";
 import Ornament from "../components/Ornament";
 import Photo from "../components/Photo";
 import { invitation } from "../data/invitation";
+import { Bloom } from "../components/FlowerReveal";
 
 type Person = (typeof invitation)["groom"];
 
@@ -27,7 +28,7 @@ function PersonCard({ person, photo }: { person: Person; photo: string }) {
   );
 }
 
-function Rsvp() {
+function Rsvp({ ready = true }: { ready?: boolean }) {
   const [searchParams] = useSearchParams();
   const guestName = searchParams.get("to");
   const [reserved, setReserved] = useState(false);
@@ -38,7 +39,8 @@ function Rsvp() {
   // Fade-up text blocks as they scroll into view. Uses a data attribute (not className) so
   // React re-renders never clobber the state.
   useEffect(() => {
-    const items = document.querySelectorAll<HTMLElement>(".invitation :is(h1, h2, h3, p, blockquote, .person, .couple-name-part)");
+    if (!ready) return;
+    const items = document.querySelectorAll<HTMLElement>(".invitation :is(h1, h2, h3, p, blockquote, .person, .couple-name-part, .event-card, .love-story-photo, .couple-row-photo)");
     const observer = new IntersectionObserver(
       (entries) => {
         for (const entry of entries) {
@@ -52,16 +54,18 @@ function Rsvp() {
     items.forEach((el) => {
       if (el.matches(".couple-names")) return;
       if (el.closest(".person") && !el.matches(".person")) return;
+      if (el.closest(".event-card") && !el.matches(".event-card")) return;
+      if (el.closest(".reservation-card")) return;
       el.dataset.reveal = "hidden";
       observer.observe(el);
     });
     return () => observer.disconnect();
-  }, []);
+  }, [ready]);
 
 
 
   return (
-    <div className="invitation" id="invitation-content">
+    <div className={`invitation${ready ? "" : " invitation-awaiting"}`} id="invitation-content" inert={!ready}>
       <section className="section welcome">
         <Florals position="tl" />
         <Florals position="tr" />
@@ -86,8 +90,6 @@ function Rsvp() {
       <section className="section couple">
         <Florals position="bl" />
         <Florals position="br" />
-        <h2 className="section-title">The Groom &amp; Bride</h2>
-        <Ornament />
         <PersonCard person={groom} photo={photos.groom} />
         <br className="couple-amp" /> 
         <PersonCard person={bride} photo={photos.bride} />
@@ -121,8 +123,15 @@ function Rsvp() {
         <h2 className="section-title">Reservation</h2>
         <p className="lead">Kindly confirm your attendance so we can prepare a seat for you:</p>
         <Ornament />
+        <div className="reservation-card">
+        <div className="reservation-header">
+          <Bloom />
+          <span className="reservation-header-eyebrow">You are invited</span>
+          <span className="reservation-header-title">A seat, a smile, a celebration.</span>
+        </div>
+        <div className="reservation-details">
         {reserved ? (
-          <p className="thank-you">Thank you for confirming your attendance!</p>
+          <p className="thank-you" role="status">Thank you for confirming your attendance!</p>
         ) : (
           <form
             className="wish-form"
@@ -169,6 +178,8 @@ function Rsvp() {
             </button>
           </form>
         )}
+        </div>
+        </div>
       </section>
 
       <section className="section portrait">

@@ -15,6 +15,7 @@ function Countdown({ target }: { target: string }) {
   const [remaining, setRemaining] = useState(() => getRemaining(targetDate));
 
   useEffect(() => {
+    const targetDate = new Date(target);
     const id = setInterval(() => setRemaining(getRemaining(targetDate)), 1000);
     return () => clearInterval(id);
   }, [target]);

@@ -1,0 +1,72 @@
+# Production stack for the VPS. The CI/CD workflow copies this file to the server and runs it;
+# every ${VAR} comes from the .env file sitting next to it on the server (see .env.prod.example).
+name: birdies-gift
+
+services:
+  # Public entry point (ports 80/443): invitation, booth, /api -> back, and n8n.
+  edge:
+    image: ${IMAGE_PREFIX:?set IMAGE_PREFIX in .env}-edge:${IMAGE_TAG:-latest}
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    environment:
+      DOMAIN_WEB: ${DOMAIN_WEB:?set DOMAIN_WEB in .env}
+      DOMAIN_BOOTH: ${DOMAIN_BOOTH:?set DOMAIN_BOOTH in .env}
+      DOMAIN_N8N: ${DOMAIN_N8N:?set DOMAIN_N8N in .env}
+      ACME_EMAIL: ${ACME_EMAIL:?set ACME_EMAIL in .env}
+    volumes:
+      # Holds the TLS certificates; losing it forces re-issuing and can hit Let's Encrypt rate limits.
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      back:
+        condition: service_healthy
+      n8n:
+        condition: service_started
+
+  # Photo-booth API. Photos live in the booth_data volume.
+  back:
+    image: ${IMAGE_PREFIX:?set IMAGE_PREFIX in .env}-back:${IMAGE_TAG:-latest}
+    restart: unless-stopped
+    environment:
+      BOOTH_ADMIN_KEY: ${BOOTH_ADMIN_KEY:?set BOOTH_ADMIN_KEY in .env}
+    volumes:
+      - booth_data:/data
+
+  # Automation. Workflows, credentials and Data Tables (the guest list) all live in n8n_data.
+  n8n:
+    image: n8nio/n8n:${N8N_VERSION:-latest}
+    restart: unless-stopped
+    environment:
+      N8N_HOST: ${DOMAIN_N8N:?set DOMAIN_N8N in .env}
+      N8N_PROTOCOL: https
+      WEBHOOK_URL: https://${DOMAIN_N8N}/
+      N8N_PROXY_HOPS: "1"
+      N8N_ENCRYPTION_KEY: ${N8N_ENCRYPTION_KEY:?set N8N_ENCRYPTION_KEY in .env}
+      GENERIC_TIMEZONE: Asia/Jakarta
+      TZ: Asia/Jakarta
+    volumes:
+      - n8n_data:/home/node/.n8n
+
+  # WhatsApp gateway. Not exposed to the internet: n8n reaches it at http://waha:3000, and the
+  # dashboard (to scan the QR code) is bound to the server's localhost only — use an SSH tunnel:
+  #   ssh -L 3000:localhost:3000 user@server   then open http://localhost:3000
+  waha:
+    image: devlikeapro/waha:${WAHA_VERSION:-latest}
+    restart: unless-stopped
+    environment:
+      WAHA_API_KEY: ${WAHA_API_KEY:?set WAHA_API_KEY in .env}
+      WHATSAPP_API_KEY: ${WAHA_API_KEY}
+    ports:
+      - "127.0.0.1:3000:3000"
+    volumes:
+      - waha_data:/app/.sessions
+
+volumes:
+  caddy_data:
+  caddy_config:
+  booth_data:
+  n8n_data:
+  waha_data:
