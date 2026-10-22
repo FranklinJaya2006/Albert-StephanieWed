@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import GalleryGrid from "../components/GalleryGrid";
 import Countdown from "../components/Countdown";
 import EventCard from "../components/EventCard";
 import Florals from "../components/Florals";
@@ -101,11 +100,16 @@ function Rsvp() {
         <p className="story">{invitation.story}</p>
       </section>
 
-      <section className="section section-dark">
-        <h2 className="section-title">When &amp; Where</h2>
+      <section className="section countdown-section" aria-labelledby="countdown-title">
+        <h2 className="section-title" id="countdown-title">Counting the Days</h2>
         <Ornament />
         <Countdown target={invitation.eventDateTime} />
         <p className="eyebrow save-the-date">Save the Date</p>
+      </section>
+
+      <section className="section section-dark" aria-labelledby="events-title">
+        <h2 className="section-title" id="events-title">When &amp; Where</h2>
+        <Ornament />
         <div className="events">
           <EventCard {...invitation.ceremony} />
           <EventCard {...invitation.reception} />
@@ -174,9 +178,12 @@ function Rsvp() {
           {coverNames.groom} &amp; {coverNames.bride}
         </h2>
         <Ornament />
-        <Photo src={photos.portrait} label="Portrait of the couple" className="portrait-photo" />
+        <div className="couple-photo-row">
+          {photos.portraits.map((src, index) => (
+            <Photo key={index} src={src} label={`Portrait of us ${index + 1}`} className="couple-row-photo" />
+          ))}
+        </div>
         <p className="hashtag">{invitation.hashtag}</p>
-        <GalleryGrid photos={photos.gallery} />
       </section>
 
       <section className="section kind-words">

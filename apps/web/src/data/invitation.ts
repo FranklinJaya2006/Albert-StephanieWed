@@ -46,14 +46,15 @@ export const invitation = {
     mapsQuery: "\?q=Bambuden+3+(New+Bambuden)",
   },
   photos: {
-    loveStory: "Ourlove.jpg",
+    loveStory: "Portrait-web.jpg",
     desktop: "/Onboard_photo-clean.png",
     cover: "/Onboard_photo-clean.png",
-    groom: "/Groom.jpg",
-    bride: "/Bride.jpg",
-    portrait: "Portrait.jpg",
+    groom: "/Groom-web.jpg",
+    bride: "/Bride-web.jpg",
+    // Foto vertikal, urut dari atas ke bawah.
+    portraits: ["Gallery1-web.jpg", "Gallery2-web.jpg"],
     closing: "",
-    gallery: ["", "", "", "", "", ""],
   },
 };
+
 

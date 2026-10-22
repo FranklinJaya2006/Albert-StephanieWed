@@ -28,7 +28,7 @@
 
   color-scheme: light;
   color: var(--ink);
-  background: var(--slate);
+  background: var(--ivory);
   font: 15px/1.7 var(--sans);
   -webkit-font-smoothing: antialiased;
 }
@@ -39,7 +39,8 @@
 
 body {
   margin: 0;
-  background: var(--slate);
+  background: var(--ivory);
+  overscroll-behavior-y: none;
 }
 
 h1,
@@ -135,7 +136,7 @@ a {
 
 /* Photo slots */
 .photo {
-  background-color: var(--slate);
+  background-color: var(--ivory);
   position: relative;
   background-image: var(--photo-placeholder);
   background-size: cover;
@@ -676,107 +677,6 @@ a {
   margin: 0.75rem auto 2rem;
 }
 
-/* Editorial gallery — staggered widths and heights, never a uniform grid. */
-.gallery-grid {
-  display: grid;
-  grid-template-columns: repeat(12, 1fr);
-  gap: 22px;
-  margin-top: 2.5rem;
-  padding: 8px;
-}
-
-.gallery-photo {
-  position: relative;
-  align-self: start;
-  border: 1px solid rgba(184, 151, 95, 0.75);
-  padding: 5px;
-  background: rgba(255, 253, 248, 0.06);
-}
-
-.gallery-photo:nth-child(1) {
-  grid-column: 1 / 8;
-  aspect-ratio: 4 / 5;
-  border-radius: 90px 90px 2px 2px;
-}
-
-.gallery-photo:nth-child(2) {
-  grid-column: 8 / 13;
-  aspect-ratio: 3 / 5;
-  margin-top: 2.5rem;
-  border-radius: 2px;
-}
-
-.gallery-photo:nth-child(3) {
-  grid-column: 1 / 6;
-  aspect-ratio: 3 / 4;
-  border-radius: 2px;
-}
-
-.gallery-photo:nth-child(4) {
-  grid-column: 6 / 13;
-  aspect-ratio: 4 / 3;
-  margin-top: 1.5rem;
-  border-radius: 2px;
-}
-
-.gallery-photo:nth-child(5) {
-  grid-column: 1 / 9;
-  aspect-ratio: 16 / 10;
-  border-radius: 60px 60px 2px 2px;
-}
-
-.gallery-photo:nth-child(6) {
-  grid-column: 9 / 13;
-  aspect-ratio: 3 / 4;
-  margin-top: 2.25rem;
-  border-radius: 2px;
-}
-
-/* Outer hairline + gold beads sitting on the four corners of each tile. */
-.gallery-photo::after {
-  content: "";
-  position: absolute;
-  inset: -7px;
-  border: 1px solid rgba(184, 151, 95, 0.55);
-  border-radius: inherit;
-  pointer-events: none;
-}
-
-.gallery-photo::before {
-  content: "";
-  position: absolute;
-  inset: -7px;
-  border-radius: inherit;
-  pointer-events: none;
-  background:
-    radial-gradient(circle at 0 0, var(--gold) 0 1.7px, transparent 1.8px),
-    radial-gradient(circle at 100% 0, var(--gold) 0 1.7px, transparent 1.8px),
-    radial-gradient(circle at 0 100%, var(--gold) 0 1.7px, transparent 1.8px),
-    radial-gradient(circle at 100% 100%, var(--gold) 0 1.7px, transparent 1.8px);
-  background-repeat: no-repeat;
-}
-
-/* Two full-bleed portrait photos on the invitation; the rest live on /gallery. */
-.gallery-preview {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  margin: 2.5rem -2rem 0;
-}
-
-.gallery-preview-photo {
-  width: 100%;
-  aspect-ratio: 3 / 4;
-}
-
-.view-more {
-  margin-top: 2.5rem;
-}
-
-.gallery-page {
-  min-height: 100svh;
-}
-
 /* Kind words */
 .wish-form {
   display: flex;
@@ -994,8 +894,8 @@ a {
 @keyframes cover-spin { to { transform: rotate(360deg); } }
 @keyframes cover-open-fade { 0%,55%,100% { opacity: 1; } 80% { opacity: .7; } }
 @media (min-width: 1024px) {
-  .desktop-photo-panel { display: block; position: fixed; inset: 0 auto 0 0; width: 60vw; height: 100dvh; overflow: hidden; background: var(--slate-deep); }
-  .desktop-photo-image { position: absolute; inset: 0 auto 0 0; width: 59.5vw; height: 100%; background-color: #c5cbcd; z-index: 1; background-size: max(90%, 67.5dvh) auto; background-repeat: no-repeat; background-position: center top; transform: scaleX(-1); }
+  .desktop-photo-panel { display: block; position: fixed; inset: 0 auto 0 0; width: 55vw; height: 100dvh; overflow: hidden; }
+  .desktop-photo-image { position: absolute; inset: 0 auto 0 0; width: 55vw; height: 100%; z-index: 1; background-size: cover; background-repeat: no-repeat; background-position: center top; transform: scaleX(-1); }
   .desktop-photo-panel::before { content: none; }
   .desktop-photo-copy { position: relative; z-index: 2; height: 100%; display: flex; flex-direction: column; justify-content: center; padding: clamp(2rem,4vw,5rem); padding-right: calc(.5vw + clamp(2rem,4vw,5rem)); color: var(--ivory); text-shadow: 0 2px 16px rgba(0,0,0,.25); }
   .desktop-photo-eyebrow { font-size: .8rem; letter-spacing: .3em; text-transform: uppercase; margin-bottom: 1.5rem; }
@@ -1003,7 +903,7 @@ a {
   .desktop-photo-names span { display: block; }
   .desktop-photo-message { max-width: 28rem; font-family: var(--names); font-style: italic; font-size: clamp(1rem,1.3vw,1.2rem); line-height: 1.8; text-wrap: pretty; }
   .desktop-photo-hashtag { margin-top: 1.25rem; font-size: .85rem; letter-spacing: .08em; }
-  .invitation-page-panel { width: 40%; margin-left: 60%; }
+  .invitation-page-panel { width: 45%; margin-left: 55%; }
   .invitation-page-panel > :is(.cover,.invitation) { width: 100%; max-width: none; margin: 0; }
 }
 @media (prefers-reduced-motion: reduce) {
@@ -1017,12 +917,34 @@ a {
 
 
 .love-story-photo {
+  background-position: center 30%;
   width: 100%;
   max-width: none;
-  aspect-ratio: 4 / 3;
+  aspect-ratio: 1 / 1;
   margin: 0 auto 1.5rem;
   border-radius: 0;
 }
+
+
+
+
+
+
+
+
+
+.couple-photo-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: clamp(6px, 1vw, 12px);
+  width: 100%;
+}
+.couple-row-photo {
+  width: 100%;
+  min-width: 0;
+  aspect-ratio: 3 / 4;
+}
+
 
 
 
