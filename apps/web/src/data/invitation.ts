@@ -53,7 +53,6 @@ export const invitation = {
     bride: "/Bride-web.jpg",
     // Foto vertikal, urut dari atas ke bawah.
     portraits: ["Gallery1-web.jpg", "Gallery2-web.jpg"],
-    closing: "",
   },
 };
 

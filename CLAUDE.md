@@ -72,13 +72,27 @@ docker-compose.prod.yml   VPS stack; values come from the server's .env (see .en
 - Design: mobile-first, 32rem column. Sizing is fluid: the root font-size is
   `clamp(15.5px, 4.1vw, 18px)` (desktop: `clamp(16px, 1.25vw, 20px)`) and everything else is in
   rem, so add new sizes in rem — not px — or they won't scale. Palette is slate blue `#708191` (main) / cream `#fbf3de`
-  (base) / champagne gold (accent), defined as CSS variables in `apps/web/src/index.css`.
+  (base) / champagne gold (accent), defined as CSS variables in `apps/web/src/index.css`. The cream is the one
+  background for every section, card and the opening overlay, with a paper grain on top (`--paper-texture`,
+  inline SVG noise, no image asset) — no slate or white panels; keep the grain faint so the cream stays cream.
   Text on the invitation page fades up on scroll (IntersectionObserver in `Rsvp.tsx`, no library).
-  Opening bloom (`FlowerReveal.tsx`) runs ~7.5s (`--bloom-duration`); it closes only on its own
+  The opening bloom runs ~7.5s (`--bloom-duration`); it closes only on its own
   `flower-reveal-exit` animation — pseudo-element animations fire animationend on it too. Fonts: Playfair Display Italic 400 only
   for the couple's names (monogram uses upright Playfair 400), Montserrat for everything else.
   The monogram (`Monogram.tsx`) is letters + leaf sprig only, no background, colored `--ivory`. Ornaments and the monogram
   are hand-made inline SVG — don't pull in external/Canva assets without the user supplying them.
+  Content photos (groom, bride, love story, portraits) have torn edges: `<Photo torn={seed}>` clips the
+  photo itself to one ripped outline (`lib/torn.ts`, deterministic per seed), so the paper
+  shows through the tears — no paper rim. clip-path clips outlines and shadows, so don't add them to
+  these photos. Pass the photo's real `width`/`height` so the tear density stays right.
+  Every flower, leaf and bud comes from `Flower.tsx` (layered petals, gold stamens; light slate blue
+  dominates, `deep` 0–2 puts a deeper slate in the middle of some flowers — never navy) so the corner garlands (`Florals.tsx`), the RSVP card and the opening animation
+  all match; don't draw a second flower style. Flowers are solid, never faint, so a section that
+  has corner florals reserves their height as padding (`--florals-space`) and content can't be
+  covered. If you resize a garland, keep its 180×110 viewBox and that padding in step.
+  Opening (`FlowerReveal.tsx`): the cream paper backdrop fades in over the cover, `App` jumps to the
+  invitation once it is opaque (`onCovered`), the slate-blue bloom opens, then the overlay fades out.
+  Keep an `animationend` on `.flower-reveal-bg` even under reduced motion — `onCovered` waits for it.
 - The repo lives inside OneDrive, which has silently reverted edits and resurrected deleted
   files mid-session. After big edits, re-check that files still have your changes.
 

@@ -8,27 +8,20 @@ import { invitation } from './data/invitation'
 function App() {
   const [opened, setOpened] = useState(false)
   const [blooming, setBlooming] = useState(false)
-  const [scrollRequest, setScrollRequest] = useState(0)
   useEffect(() => {
     if (!blooming) return
     const previous = document.body.style.overflow
     document.body.style.overflow = 'hidden'
     return () => { document.body.style.overflow = previous }
   }, [blooming])
-  useEffect(() => {
-    if (!opened) return
-    let scrollFrame = 0
-    const frame = requestAnimationFrame(() => {
-      scrollFrame = requestAnimationFrame(() => {
-        const content = document.getElementById('invitation-content')
-        if (content) window.scrollTo({
-          top: window.scrollY + content.getBoundingClientRect().top,
-          behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth',
-        })
-      })
-    })
-    return () => { cancelAnimationFrame(frame); cancelAnimationFrame(scrollFrame) }
-  }, [opened, scrollRequest])
+  // Called once the opening backdrop fully covers the cover, so the jump to the invitation is
+  // never seen: the page moves while hidden, then the backdrop fades out onto the invitation.
+  // Also called when the animation ends: with reduced motion both finish in the same instant,
+  // and a repeat jump is a no-op otherwise.
+  const jumpToInvitation = () => {
+    const content = document.getElementById('invitation-content')
+    if (content) window.scrollTo({ top: window.scrollY + content.getBoundingClientRect().top, behavior: 'instant' })
+  }
   return (
     <BrowserRouter>
       <div className="invitation-layout">
@@ -42,13 +35,12 @@ function App() {
           </div>
         </aside>
         <main className="invitation-page-panel">
-          <Onboarding onOpen={() => {
+          <Onboarding opening={blooming} onOpen={() => {
             setOpened(true)
             setBlooming(true)
-            setScrollRequest((value) => value + 1)
           }} />
           {opened && <Rsvp ready={!blooming} />}
-          {blooming && <FlowerReveal onComplete={() => setBlooming(false)} />}
+          {blooming && <FlowerReveal onCovered={jumpToInvitation} onComplete={() => { jumpToInvitation(); setBlooming(false) }} />}
         </main>
       </div>
     </BrowserRouter>

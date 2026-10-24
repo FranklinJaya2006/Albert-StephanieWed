@@ -7,14 +7,14 @@ import Monogram from "../components/Monogram";
 import Ornament from "../components/Ornament";
 import Photo from "../components/Photo";
 import { invitation } from "../data/invitation";
-import { Bloom } from "../components/FlowerReveal";
+import { FlowerBloom } from "../components/Flower";
 
 type Person = (typeof invitation)["groom"];
 
-function PersonCard({ person, photo }: { person: Person; photo: string }) {
+function PersonCard({ person, photo, seed }: { person: Person; photo: string; seed: number }) {
   return (
     <div className="person">
-      <Photo src={photo} label={person.name} className="person-photo" />
+      <Photo src={photo} label={person.name} className="person-photo" torn={seed} width={200} height={267} />
       <h3 className="person-name">{person.name}</h3>
       <p className="person-parents">
         {person.parentsLabel}
@@ -90,15 +90,15 @@ function Rsvp({ ready = true }: { ready?: boolean }) {
       <section className="section couple">
         <Florals position="bl" />
         <Florals position="br" />
-        <PersonCard person={groom} photo={photos.groom} />
-        <br className="couple-amp" /> 
-        <PersonCard person={bride} photo={photos.bride} />
+        <PersonCard person={groom} photo={photos.groom} seed={11} />
+        <br className="couple-amp" />
+        <PersonCard person={bride} photo={photos.bride} seed={23} />
       </section>
 
       <section className="section love-story" aria-labelledby="love-story-title">
         <Florals position="tr" />
         <h2 className="section-title" id="love-story-title">Our Love Story</h2>
-        <Photo src={photos.loveStory} label="Our Love Story photo" className="love-story-photo" />
+        <Photo src={photos.loveStory} label="Our Love Story photo" className="love-story-photo" torn={37} width={261} height={348} />
         <p className="story">{invitation.story}</p>
       </section>
 
@@ -125,7 +125,7 @@ function Rsvp({ ready = true }: { ready?: boolean }) {
         <Ornament />
         <div className="reservation-card">
         <div className="reservation-header">
-          <Bloom />
+          <FlowerBloom seed={7} />
           <span className="reservation-header-eyebrow">You are invited</span>
           <span className="reservation-header-title">A seat, a smile, a celebration.</span>
         </div>
@@ -191,7 +191,7 @@ function Rsvp({ ready = true }: { ready?: boolean }) {
         <Ornament />
         <div className="couple-photo-row">
           {photos.portraits.map((src, index) => (
-            <Photo key={index} src={src} label={`Portrait of us ${index + 1}`} className="couple-row-photo" />
+            <Photo key={index} src={src} label={`Portrait of us ${index + 1}`} className="couple-row-photo" torn={41 + index * 17} width={261} height={391} />
           ))}
         </div>
         <p className="hashtag">{invitation.hashtag}</p>
@@ -228,7 +228,6 @@ function Rsvp({ ready = true }: { ready?: boolean }) {
       </section>
 
       <section className="closing">
-        <Photo src={photos.closing} label="Closing photo" className="closing-photo" />
         <div className="closing-content">
           <p className="closing-note">
             It will be a joy for us if you are able to attend our wedding day. Thank you for all the
