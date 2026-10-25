@@ -1,0 +1,50 @@
+name: Deploy site to GitHub Pages
+
+# Builds only the guest-facing site (apps/web). The photo booth, API, n8n and WAHA are not static
+# and keep running on the VPS (see ci-cd.yml). Needs Settings > Pages > Source = "GitHub Actions".
+on:
+  push:
+    branches: [main]
+    paths: ["apps/web/**", "package.json", "package-lock.json", ".github/workflows/pages.yml"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: Build
+        run: npm run build -w web
+        env:
+          # https://<user>.github.io/<repo>/ — the site lives in a subfolder.
+          VITE_BASE: /${{ github.event.repository.name }}/
+      - name: Drop full-size originals
+        # Only the *-web files are used by the page; originals are tens of MB and would be public.
+        run: find apps/web/dist -maxdepth 1 -type f \( -name '*.jpg' -o -name '*.png' \) ! -name '*-web.jpg' -delete
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: apps/web/dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
