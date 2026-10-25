@@ -65,6 +65,8 @@ docker-compose.prod.yml   VPS stack; values come from the server's .env (see .en
   is the real test of the Dockerfiles and the Caddyfile (validated at image build time).
 - Photo originals in `apps/web/public` are named `X.jpg`; only `X-web.jpg` ships (see
   `.dockerignore`). A new photo used by the app must follow that naming.
+- Keep every `*-web.jpg` small (about 1200px wide, a few hundred KB). A 17 MB `Portrait-web.jpg` once made fast scrolling
+  lag and flash the page background. The page/body background is cream on purpose, so any unpainted area shows paper, not blue.
 - Cover/desktop photo is `couple-cutout-web.jpg` (a plain portrait photo, not a cutout: sized `cover`, not mirrored).
 - Don't invent the message/invitation template — the user is providing a reference template
   for the "Yth. Bapak/Ibu ..." wording and file format. Ask before guessing its structure.

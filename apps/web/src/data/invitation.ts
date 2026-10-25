@@ -27,13 +27,13 @@ export const invitation = {
     parentsLabel: "The Daughter of",
     father: "Mr. Yusuf Likadinata",
     mother: "Mrs. Ingrid K.",
-    instagram: "@bride",
+    instagram: "@stephanielikaa",
   },
   quote: {
     text: "So they are no longer two, but one. Therefore what God has joined together, let no one separate.",
     source: "Matthew 19:6",
   },
-  hashtag: "#ASwedding",
+  hashtag: "#2AS1",
   story:
     "Tell your story here — how you met, and the journey that brought the two of you to this day.",
   // Local time — drives the countdown.
@@ -61,7 +61,7 @@ export const invitation = {
     groom: asset("Groom-web.jpg"),
     bride: asset("Bride-web.jpg"),
     // Foto vertikal (2:3), 4 foto: kiri-kanan, lalu baris berikutnya. "" = placeholder sampai file ada.
-    portraits: [asset("Gallery1-web.jpg"), asset("Gallery2-web.jpg"), asset(""), asset("")],
+    portraits: [asset("Gallery1-web.jpg"), asset("Gallery2-web.jpg"), asset("Gallery3.jpg"), asset("Gallery4.jpg")],
   },
 };
 

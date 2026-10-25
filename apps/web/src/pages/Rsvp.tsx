@@ -22,7 +22,11 @@ function PersonCard({ person, photo }: { person: Person; photo: string }) {
         <br />
         and {person.mother}
       </p>
-      <p className="person-social">{person.instagram}</p>
+      <p className="person-social">
+        <a href={`https://www.instagram.com/${person.instagram.replace(/^@/, "")}/`} target="_blank" rel="noopener noreferrer">
+          {person.instagram}
+        </a>
+      </p>
     </div>
   );
 }

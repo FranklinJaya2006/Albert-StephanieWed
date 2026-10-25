@@ -33,7 +33,8 @@
   /* The page stops scrolling while the opening plays; keep the scrollbar's space so nothing jumps. */
   scrollbar-gutter: stable;
   color: var(--ink);
-  background: var(--slate);
+  /* Cream, not slate: if a fast scroll outruns painting (or the page overscrolls), paper shows, never blue. */
+  background: var(--ivory);
   /* Fluid base size: nearly every size below is in rem, so the whole page scales with this.
      15.5px on small phones (keeps .72rem labels ≥11px), 16px at 390px, up to 18px on large
      phones/tablets; desktop override further down. */
@@ -47,7 +48,7 @@
 
 body {
   margin: 0;
-  background: var(--slate);
+  background: var(--paper-texture), var(--ivory);
 }
 
 h1,
@@ -625,6 +626,19 @@ a {
   margin-top: 0.5rem;
   font-size: 0.85rem;
   color: var(--gold-deep);
+}
+
+.person-social a {
+  display: inline-block;
+  padding: 0.35rem 0.6rem;
+  color: inherit;
+  text-decoration: none;
+}
+
+.person-social a:hover,
+.person-social a:focus-visible {
+  text-decoration: underline;
+  text-underline-offset: 0.25em;
 }
 
 .and {
