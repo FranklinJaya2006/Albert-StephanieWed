@@ -61,7 +61,7 @@ export const invitation = {
     groom: asset("Groom-web.jpg"),
     bride: asset("Bride-web.jpg"),
     // Foto vertikal (2:3), 4 foto: kiri-kanan, lalu baris berikutnya. "" = placeholder sampai file ada.
-    portraits: [asset("Gallery1-web.jpg"), asset("Gallery2-web.jpg"), asset("Gallery3.jpg"), asset("Gallery4.jpg")],
+    portraits: [asset("Gallery1-web.jpg"), asset("Gallery2-web.jpg"), asset("Gallery3-web.jpg"), asset("Gallery4-web.jpg")],
   },
 };
 
