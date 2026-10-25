@@ -1,8 +1,9 @@
 import { BrowserRouter } from 'react-router-dom'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { flushSync } from 'react-dom'
 import Onboarding from './pages/Onboarding'
 import Rsvp from './pages/Rsvp'
+import MusicToggle from './components/MusicToggle'
 import FlowerReveal from './components/FlowerReveal'
 import { invitation } from './data/invitation'
 
@@ -10,6 +11,8 @@ function App() {
   const [opened, setOpened] = useState(false)
   const [blooming, setBlooming] = useState(false)
   const [finished, setFinished] = useState(false)
+  const audioRef = useRef<HTMLAudioElement>(null)
+  const [playing, setPlaying] = useState(false)
   // The invitation is built (hidden) shortly after the cover appears, with its photos fetched, so
   // none of that work lands in the middle of the opening animation.
   const [mounted, setMounted] = useState(false)
@@ -56,11 +59,19 @@ function App() {
         </aside>
         <main className="invitation-page-panel">
           <Onboarding opened={opened} onOpen={() => {
+            // Pressing the button is the tap that lets the browser start the song.
+            void audioRef.current?.play().catch(() => {})
             setOpened(true)
             setBlooming(true)
           }} />
           {(mounted || opened) && <Rsvp shown={shown} ready={!blooming} />}
           {mounted && !finished && <FlowerReveal active={blooming} onCovered={reveal} onComplete={() => { reveal(); setBlooming(false); setFinished(true) }} />}
+          {invitation.music && (
+            <>
+              <audio ref={audioRef} src={invitation.music} loop preload="auto" onPlay={() => setPlaying(true)} onPause={() => setPlaying(false)} />
+              {opened && <MusicToggle playing={playing} onToggle={() => { const a = audioRef.current; if (a) void (a.paused ? a.play().catch(() => {}) : a.pause()) }} />}
+            </>
+          )}
         </main>
       </div>
     </BrowserRouter>

@@ -34,7 +34,7 @@ apps/
                    - "/"     Cover — photo, A&T monogram, "Let's Begin"
                    - "/rsvp" Invitation — "Dear Mr/Mrs/Ms {?to=}", groom & bride, countdown,
                              event cards, Reservation form (name, attendance; if attending: event + guest count), portrait +
-                             2 full-width gallery photos, Kind Words form (name + wishes), closing.
+                             4 gallery photos in an even 2×2 grid (`portraits` in data; "" = placeholder), Kind Words form (name + wishes), closing.
                              Corner flower accents come from components/Florals.tsx.
                    - "/gallery" All gallery photos ("View More" from /rsvp), keeps ?to=
                    All placeholder content + photo paths live in src/data/invitation.ts.
@@ -65,6 +65,7 @@ docker-compose.prod.yml   VPS stack; values come from the server's .env (see .en
   is the real test of the Dockerfiles and the Caddyfile (validated at image build time).
 - Photo originals in `apps/web/public` are named `X.jpg`; only `X-web.jpg` ships (see
   `.dockerignore`). A new photo used by the app must follow that naming.
+- Cover/desktop photo is `couple-cutout-web.jpg` (a plain portrait photo, not a cutout: sized `cover`, not mirrored).
 - Don't invent the message/invitation template — the user is providing a reference template
   for the "Yth. Bapak/Ibu ..." wording and file format. Ask before guessing its structure.
 - RSVP submission in `apps/web` doesn't persist anywhere yet (no backend endpoint). Don't
@@ -76,23 +77,35 @@ docker-compose.prod.yml   VPS stack; values come from the server's .env (see .en
   background for every section, card and the opening overlay, with a paper grain on top (`--paper-texture`,
   inline SVG noise, no image asset) — no slate or white panels; keep the grain faint so the cream stays cream.
   Text on the invitation page fades up on scroll (IntersectionObserver in `Rsvp.tsx`, no library).
-  The opening bloom runs ~7.5s (`--bloom-duration`); it closes only on its own
+  The opening bloom runs ~7s (`--bloom-duration`); it closes only on its own
   `flower-reveal-exit` animation — pseudo-element animations fire animationend on it too. Fonts: Playfair Display Italic 400 only
   for the couple's names (monogram uses upright Playfair 400), Montserrat for everything else.
   The monogram (`Monogram.tsx`) is letters + leaf sprig only, no background, colored `--ivory`. Ornaments and the monogram
   are hand-made inline SVG — don't pull in external/Canva assets without the user supplying them.
-  Content photos (groom, bride, love story, portraits) have torn edges: `<Photo torn={seed}>` clips the
-  photo itself to one ripped outline (`lib/torn.ts`, deterministic per seed), so the paper
-  shows through the tears — no paper rim. clip-path clips outlines and shadows, so don't add them to
-  these photos. Pass the photo's real `width`/`height` so the tear density stays right.
-  Every flower, leaf and bud comes from `Flower.tsx` (layered petals, gold stamens; light slate blue
-  dominates, `deep` 0–2 puts a deeper slate in the middle of some flowers — never navy) so the corner garlands (`Florals.tsx`), the RSVP card and the opening animation
+  Cards, countdown tiles and frames are plain rectangles (2–4px radius), no arches or cut corners. Every content photo (groom, bride,
+  love story, the 4 gallery photos) uses one frame, `FramedPhoto` (`.photo-frame`/`.framed-photo`): 0.9rem corners, picture inset in
+  a thin gold border with an outer hairline, and `PhotoBorderOrnament` on the bottom edge. Don't give any photo its own
+  border style; the cover photo is full-bleed. No photo has a torn/paper-cut edge (removed on request). Groom and bride
+  are joined by an `<Ornament />`.
+  Every flower, leaf and bud comes from `Flower.tsx` (a rose seen from above: petals spiral out at the golden angle, pale slate blue, a fine spiral at the heart; `deep` 1 = deeper slate heart, never navy) so the corner garlands (`Florals.tsx`), the opening animation (the Reservation section has no flower, ornament or card: title, a line of text, then the form directly on the paper)
   all match; don't draw a second flower style. Flowers are solid, never faint, so a section that
   has corner florals reserves their height as padding (`--florals-space`) and content can't be
   covered. If you resize a garland, keep its 180×110 viewBox and that padding in step.
-  Opening (`FlowerReveal.tsx`): the cream paper backdrop fades in over the cover, `App` jumps to the
+  Opening (`FlowerReveal.tsx`): a tone-on-tone arrangement (`FlowerBloom`: 12 roses of one slate blue, light and deep, over a fan of slate foliage; foliage first, then roses open one by one; each rose and the foliage is its own small <svg> animated with transform/opacity only), glow, rings and sparkles sit centred in a circle (`.flower-reveal-stage`) with
+  the caption underneath; the cream paper backdrop fades in over the cover, the open button disappears once pressed (the opening plays only once); `App` jumps to the
   invitation once it is opaque (`onCovered`), the slate-blue bloom opens, then the overlay fades out.
   Keep an `animationend` on `.flower-reveal-bg` even under reduced motion — `onCovered` waits for it.
+  Keep the opening smooth: animate only transform/opacity on separate elements (never shapes inside one big SVG, never
+  blur/letter-spacing/filters). Heavy work happens off-screen: `App` builds the invitation hidden and the overlay paused
+  shortly after load (300ms), preloads the photos, then un-hides the invitation only once the overlay is opaque
+  (`reveal`, with `flushSync`); the fade-up observer starts only after the overlay is gone. `Florals`/`FlowerBloom`
+  are `memo`ized so state changes don't re-render their SVGs. Measure with a rAF frame logger if you change this.
+- Two deploy targets: the VPS (ci-cd.yml: Docker, includes booth/back/n8n) and GitHub Pages (pages.yml: only `apps/web`,
+  static, built with `VITE_BASE=/<repo>/`; Settings > Pages > Source must be "GitHub Actions"). Because Pages serves from a
+  subfolder, never hard-code a leading `/` for assets: photo paths go through `asset()` in `data/invitation.ts`. Pages
+  strips full-size originals (only `*-web.jpg` ships), same as the Docker image.
+- Background music: `music` in `data/invitation.ts` ("" = none), file in `public/music/` (see its README). It starts from the
+  open-button press (a user tap, which browsers require) and `MusicToggle` mutes it. Only use a song the couple may use.
 - The repo lives inside OneDrive, which has silently reverted edits and resurrected deleted
   files mid-session. After big edits, re-check that files still have your changes.
 

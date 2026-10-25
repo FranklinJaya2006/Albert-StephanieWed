@@ -4,9 +4,13 @@
 
 // Photo paths are plain file names (a leading slash is fine). This prefixes the site's base path so
 // they also work when the site is served from a subfolder (GitHub Pages).
-const asset = (file: string) => (file ? `${import.meta.env.BASE_URL}${file.replace(/^\//, "")}` : file);
+const asset = (file: string) =>
+  !file || /^https?:\/\//.test(file) ? file : `${import.meta.env.BASE_URL}${file.replace(/^\//, "")}`;
 
 export const invitation = {
+  // Background song, played when the guest opens the invitation. See public/music/README.md.
+  // "" = no music. Example: asset("music/lagu.mp3")
+  music: asset("https://invitato.net/template-danielpriscilla/static/bg-sound-0ded40bc34f135715c0b9e85d808518b.mp3"),
   initials: { first: "A", second: "S" },
   // Nama tampilan halaman pembuka; bebas berbeda dari nama lengkap di bawah.
   coverNames: { groom: "Albert", bride: "Stephanie" },
