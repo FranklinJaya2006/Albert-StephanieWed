@@ -30,6 +30,8 @@
   --sans: "Montserrat", "Segoe UI", system-ui, sans-serif;
 
   color-scheme: light;
+  /* The page stops scrolling while the opening plays; keep the scrollbar's space so nothing jumps. */
+  scrollbar-gutter: stable;
   color: var(--ink);
   background: var(--slate);
   /* Fluid base size: nearly every size below is in rem, so the whole page scales with this.
@@ -298,9 +300,8 @@ a {
 .cover-photo {
   position: absolute;
   inset: 0;
-  background-size: max(110%, 82.5svh) auto;
-  background-position: 35% top;
-  transform: scaleX(-1);
+  background-size: cover;
+  background-position: 40% top;
 }
 
 .cover-photo::before {
@@ -472,11 +473,27 @@ a {
 
 /* Shared by every flower, leaf and bud (Flower.tsx). */
 .flower-petal {
-  stroke: rgba(79, 93, 107, 0.4);
+  stroke: rgba(60, 85, 115, 0.3);
+}
+
+.flower-rim {
+  fill: none;
+  stroke: rgba(255, 255, 255, 0.45);
+  stroke-linecap: round;
+}
+
+.flower-swirl {
+  fill: none;
+  stroke: rgba(60, 85, 115, 0.3);
+  stroke-linecap: round;
 }
 
 .leaf-shape {
   stroke: rgba(70, 110, 45, 0.4);
+}
+
+.leaf-slate {
+  stroke: rgba(60, 85, 115, 0.4);
 }
 
 .blossom-petal {
@@ -558,10 +575,39 @@ a {
 }
 
 /* Groom & bride */
-.person-photo {
-  width: min(12.5rem, 70%);
+/* One frame for every content photo: the picture sits inset in a thin gold border with a second hairline
+   outside it, and an ornament on the bottom edge. background-clip keeps the picture's rounded corners
+   concentric with the border. The wrapper's own class sets size and aspect ratio. */
+.photo-frame {
+  position: relative;
+}
+
+.framed-photo {
+  width: 100%;
+  height: 100%;
+  padding: 0.45rem;
+  border: 1px solid var(--gold);
+  border-radius: 0.9rem;
+  background-origin: content-box;
+  background-clip: content-box;
+  outline: 1px solid rgba(184, 151, 95, 0.5);
+  outline-offset: 0.4rem;
+}
+
+.photo-ornament {
+  position: absolute;
+  left: 50%;
+  bottom: -0.4rem;
+  width: min(9rem, 72%);
+  translate: -50% 50%;
+  color: var(--gold);
+  pointer-events: none;
+}
+
+.person-frame {
+  width: min(13.5rem, 74%);
   aspect-ratio: 3 / 4;
-  margin: 0 auto 1.5rem;
+  margin: 0.5rem auto 2.4rem;
 }
 
 .person-name {
@@ -728,7 +774,7 @@ a {
 .gallery-photo:nth-child(1) {
   grid-column: 1 / 8;
   aspect-ratio: 4 / 5;
-  border-radius: 90px 90px 2px 2px;
+  border-radius: 2px;
 }
 
 .gallery-photo:nth-child(2) {
@@ -754,7 +800,7 @@ a {
 .gallery-photo:nth-child(5) {
   grid-column: 1 / 9;
   aspect-ratio: 16 / 10;
-  border-radius: 60px 60px 2px 2px;
+  border-radius: 2px;
 }
 
 .gallery-photo:nth-child(6) {
@@ -996,15 +1042,11 @@ a {
 .desktop-photo-panel { display: none; }
 .invitation-page-panel { min-width: 0; }
 .cover-next { width: 44px; height: 44px; padding: 0; border-radius: 50%; font-family: inherit; cursor: pointer; }
-.cover-next:disabled { cursor: wait; }
-.cover-spinner { width: 16px; height: 16px; border: 1.5px solid rgba(255,255,255,.3); border-top-color: #fff; border-radius: 50%; animation: cover-spin 1s linear infinite; }
-.cover-opening { pointer-events: none; }
-@keyframes cover-spin { to { transform: rotate(360deg); } }
 @media (min-width: 1024px) {
   /* The invitation column is 45vw wide here, so scale the base size with the viewport. */
   :root { font-size: clamp(16px, 1.25vw, 20px); }
   .desktop-photo-panel { display: block; position: fixed; inset: 0 auto 0 0; width: 55vw; height: 100dvh; overflow: hidden; background: var(--slate-deep); }
-  .desktop-photo-image { position: absolute; inset: 0 auto 0 0; width: 100%; height: 100%; background-size: max(110%, 82.5dvh) auto; background-repeat: no-repeat; background-position: 35% top; transform: scaleX(-1); filter: contrast(.86) saturate(.9) brightness(1.03) sepia(.08); }
+  .desktop-photo-image { position: absolute; inset: 0 auto 0 0; width: 100%; height: 100%; background-size: cover; background-repeat: no-repeat; background-position: 40% top; filter: contrast(.86) saturate(.9) brightness(1.03) sepia(.08); }
   .desktop-photo-panel::after { content: none; }
   .desktop-photo-copy { position: relative; z-index: 1; height: 100%; display: flex; flex-direction: column; justify-content: center; padding: clamp(2rem,4vw,5rem); padding-right: calc(.5vw + clamp(2rem,4vw,5rem)); color: #f2eee8; text-shadow: 0 1px 3px rgba(30, 27, 24, 0.32); }
   .desktop-photo-eyebrow { color: inherit; font-weight: 600; text-shadow: inherit; font-size: 1.5rem; letter-spacing: .3em; text-transform: uppercase; margin-bottom: 1.5rem; }
@@ -1014,9 +1056,6 @@ a {
   .desktop-photo-hashtag { margin-top: 1.25rem; font-size: .85rem; letter-spacing: .08em; }
   .invitation-page-panel { width: 45%; margin-left: 55%; }
   .invitation-page-panel > :is(.cover,.invitation) { width: 100%; max-width: none; margin: 0; }
-}
-@media (prefers-reduced-motion: reduce) {
-  .cover-spinner { animation: none; }
 }
 
 
@@ -1034,11 +1073,9 @@ a {
 
 /* Botanical invitation details. Timing controls stay together here. */
 :root {
-  --bloom-duration: 7.5s;
-  --grow-duration: 2.6s;
+  --bloom-duration: 7s;
 }
 .invitation-page-panel { position: relative; isolation: isolate; overflow: clip; }
-.invitation-awaiting > * { visibility: hidden; }
 .flower-reveal {
   position: fixed;
   inset: 0;
@@ -1057,10 +1094,16 @@ a {
   position: absolute;
   inset: 20px;
   border: 1px solid rgba(184,151,95,.35);
-  border-radius: 50% 50% 2px 2px;
+  border-radius: 2px;
   pointer-events: none;
 }
 .flower-reveal::after { inset: 28px; border-color: rgba(184,151,95,.17); }
+/* Waiting for the button: invisible, and every animation held at its first frame. */
+.flower-reveal:not([data-active]) { visibility: hidden; pointer-events: none; }
+.flower-reveal:not([data-active]),
+.flower-reveal:not([data-active])::before,
+.flower-reveal:not([data-active])::after,
+.flower-reveal:not([data-active]) * { animation-play-state: paused !important; }
 /* The cream paper backdrop fades in over the cover (App scrolls to the invitation once it is opaque). */
 .flower-reveal-bg {
   position: absolute;
@@ -1068,21 +1111,30 @@ a {
   background: var(--paper-texture), var(--ivory);
   animation: reveal-bg-in 0.9s ease both;
 }
-.flower-bloom { width: min(68vw, 350px); flex: 0 0 auto; overflow: visible; }
-.flower-grow {
-  transform-origin: 0 0;
-  animation: flower-grow var(--grow-duration) cubic-bezier(.2,.65,.2,1) both;
-  animation-delay: calc(var(--delay, 0ms) + 0.8s);
+.flower-bloom { position: relative; width: min(68vw, 350px); aspect-ratio: 1; flex: 0 0 auto; }
+.bloom-part { position: absolute; height: auto; aspect-ratio: 1; overflow: visible; }
+/* Each rose (and the foliage) unfolds from its own centre: a scale + turn + fade on one picture. */
+.bloom-in {
+  opacity: 0;
+  will-change: transform, opacity;
+  animation: bloom-in 1.5s cubic-bezier(.2,.8,.25,1) both;
+  animation-delay: calc(var(--delay, 0ms) + 0.5s);
 }
-.flower-core {
-  transform-origin: 0 0;
-  animation: flower-core 1s ease both;
-  animation-delay: calc(var(--delay, 0ms) + 0.8s);
+/* The circle: orbit rings, glow, sparkles and the bloom all centre inside it; the caption sits
+   below it, so the whole composition is symmetric. */
+.flower-reveal-stage {
+  position: relative;
+  flex: 0 0 auto;
+  width: var(--orbit-size);
+  aspect-ratio: 1;
+  display: grid;
+  place-items: center;
 }
 .flower-reveal-orbit {
   position: absolute;
-  width: var(--orbit-size);
-  aspect-ratio: 1;
+  inset: 0;
+  width: 100%;
+  height: 100%;
   overflow: visible;
   rotate: -90deg;
 }
@@ -1103,6 +1155,9 @@ a {
 .flower-reveal::after { animation-delay: .35s; }
 .flower-reveal-glow {
   position: absolute;
+  top: 50%;
+  left: 50%;
+  translate: -50% -50%;
   width: min(115vw, 660px);
   aspect-ratio: 1;
   border-radius: 50%;
@@ -1120,8 +1175,9 @@ a {
 .orbit-line-inner { stroke-opacity: .45; animation-delay: .8s; }
 .flower-reveal-sparkles {
   position: absolute;
-  width: var(--orbit-size);
-  aspect-ratio: 1;
+  inset: 0;
+  width: 100%;
+  height: 100%;
 }
 .flower-reveal-sparkles span {
   position: absolute;
@@ -1137,7 +1193,6 @@ a {
   opacity: 0;
   animation: sparkle-twinkle 1.8s var(--delay) ease-in-out 2;
 }
-.flower-reveal .flower-bloom { animation: bloom-rise 4.2s .4s cubic-bezier(.2,.7,.2,1) both; }
 .flower-reveal-caption > span { animation: caption-track-in 1.8s 2s cubic-bezier(.2,.7,.2,1) both; }
 .flower-reveal-caption p {
   background: linear-gradient(110deg, var(--slate-deep) 40%, var(--gold) 50%, var(--slate-deep) 60%);
@@ -1155,22 +1210,17 @@ a {
   0%, 100% { opacity: 0; transform: rotate(var(--angle)) var(--orbit-offset) scale(.2); }
   50% { opacity: 1; transform: rotate(var(--angle)) var(--orbit-offset) scale(1); }
 }
-@keyframes bloom-rise { from { opacity: 0; transform: scale(.78) rotate(-28deg); } to { opacity: 1; transform: none; } }
-@keyframes caption-track-in { from { opacity: 0; letter-spacing: .9em; filter: blur(4px); } to { opacity: 1; letter-spacing: .3em; filter: none; } }
-@keyframes caption-blur-in { from { opacity: 0; transform: translateY(12px); filter: blur(8px); } to { opacity: 1; transform: none; filter: none; } }
+@keyframes caption-track-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+@keyframes caption-blur-in { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
 @keyframes name-shimmer { from { background-position: 100% 0; } to { background-position: 0 0; } }
-@keyframes flower-grow {
-  from { transform: scale(.06, .1) rotate(-16deg); opacity: 0; }
-  to { transform: none; opacity: 1; }
-}
-@keyframes flower-core {
-  from { transform: scale(0); opacity: 0; }
-  to { transform: none; opacity: 1; }
+@keyframes bloom-in {
+  from { opacity: 0; transform: scale(.5) rotate(-24deg); }
+  to { opacity: 1; transform: none; }
 }
 @keyframes reveal-bg-in { from { opacity: 0; } to { opacity: 1; } }
 @keyframes flower-reveal-exit {
-  0%, 82% { opacity: 1; transform: none; filter: none; }
-  100% { opacity: 0; transform: scale(1.06); filter: blur(6px); }
+  0%, 82% { opacity: 1; }
+  100% { opacity: 0; }
 }
 @keyframes bloom-caption { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
 
@@ -1178,15 +1228,14 @@ a {
 .section { padding-block: clamp(3.5rem,8vw,5.5rem); }
 .section-title { font-family: var(--names); font-size: clamp(1.8rem,4vw,2.25rem); letter-spacing: .01em; margin-bottom: 1.6rem; }
 .welcome { padding-top: 5rem; }
-.welcome::before { content: ""; position: absolute; inset: 18px; border: 1px solid rgba(184,151,95,.28); border-radius: 8.5rem 8.5rem 2px 2px; pointer-events: none; }
+.welcome::before { content: ""; position: absolute; inset: 18px; border: 1px solid rgba(184,151,95,.28); border-radius: 2px; pointer-events: none; }
 .welcome .lead { font-size: .83rem; line-height: 1.95; }
 .welcome .quote { font-size: .9rem; line-height: 1.9; }
-.person + .couple-amp { display: block; margin-block: 1.6rem; }
-.love-story-photo { width: 80%; margin-inline: auto; aspect-ratio: 3 / 4; margin-bottom: 2rem; }
-.countdown-unit { background: rgba(255,255,255,.42); border: 1px solid rgba(184,151,95,.35); border-radius: 2rem 2rem 3px 3px; padding: 1rem .5rem; min-width: 0; flex: 1; }
+.love-story-photo { width: 76%; margin: 0.8rem auto 2.6rem; aspect-ratio: 3 / 4; }
+.countdown-unit { background: rgba(255,255,255,.42); border: 1px solid rgba(184,151,95,.35); border-radius: 3px; padding: 1rem .5rem; min-width: 0; flex: 1; }
 .countdown { max-width: 26rem; margin-inline: auto; gap: .5rem; }
 .countdown-value { font-family: var(--names); font-size: clamp(1.8rem,5vw,2.5rem); color: var(--slate-deep); }
-.event-card { position: relative; border-radius: 4.5rem 4.5rem 5px 5px; box-shadow: 0 14px 28px rgba(24,33,42,.12); transition: box-shadow .3s ease, translate .3s ease; }
+.event-card { position: relative; border-radius: 4px; box-shadow: 0 14px 28px rgba(24,33,42,.12); transition: box-shadow .3s ease, translate .3s ease; }
 .event-card:focus-within { box-shadow: 0 18px 38px rgba(24,33,42,.22); }
 .event-label { font-family: var(--names); font-size: 1.8rem; }
 .event-link { display: inline-flex; align-items: center; justify-content: center; gap: .7rem; padding: .5rem 1rem; border: 1px solid rgba(184,151,95,.45); border-radius: 99px; text-decoration: none; }
@@ -1198,17 +1247,13 @@ a {
 .wish-form input:focus, .wish-form select:focus, .wish-form textarea:focus { border-color: var(--gold-deep); box-shadow: 0 0 0 4px rgba(184,151,95,.1); }
 /* Background-image photos have no intrinsic height, so each slot needs an aspect ratio. */
 .couple-row-photo { width: 100%; aspect-ratio: 2 / 3; }
-.couple-photo-row { display: flex; flex-direction: column; align-items: center; gap: 1.6rem; margin-block: 1.5rem; }
-.couple-photo-row .couple-row-photo { width: 80%; }
+/* Gallery: an even two-column grid, every photo the same size and aligned. */
+.couple-photo-row { display: grid; grid-template-columns: 1fr 1fr; gap: 2.4rem 1.4rem; margin: 1.8rem 0.5rem 2.2rem; }
 
 /* The RSVP card opens like a small botanical invitation. */
-.reservation-card { margin-top: 2rem; border: 1px solid rgba(184,151,95,.55); border-radius: 6rem 6rem 6px 6px; background: rgba(255,255,255,.4); box-shadow: 0 14px 38px rgba(79,93,107,.1); overflow: hidden; }
-.reservation-header { display: flex; align-items: center; flex-direction: column; padding: 1.8rem 1.2rem; gap: .8rem; color: var(--ink); }
-.reservation-header .flower-bloom { width: 7rem; height: 7rem; }
-.reservation-header-eyebrow { color: var(--gold-deep); font-size: .75rem; text-transform: uppercase; letter-spacing: .2em; }
-.reservation-header-title { font-family: var(--names); font-style: italic; font-size: 1.4rem; line-height: 1.4; max-width: 16rem; }
-.reservation-details { padding: 0 clamp(1rem,3vw,2rem) 2rem; }
-.reservation-details .wish-form { margin-top: 1rem; }
+.reservation-card { margin-top: 2rem; }
+.reservation-details { padding: 0; }
+.reservation-details .wish-form { margin-top: 0; }
 .reservation-details .thank-you { font-family: var(--names); font-size: 1.3rem; color: var(--slate-deep); text-align: center; }
 @media (hover: hover) {
   .event-card:hover { translate: 0 -4px; box-shadow: 0 18px 38px rgba(24,33,42,.2); }
@@ -1218,10 +1263,10 @@ a {
 @media (max-width: 374px) { .section { padding-inline: 1.25rem; } .gallery-preview { margin-inline: -1.25rem; } .countdown { gap: .3rem; } .countdown-label { font-size: .75rem; letter-spacing: .06em; } }
 @media (prefers-reduced-motion: reduce) {
   .flower-reveal { animation-duration: .01s; }
-  .flower-grow, .flower-core, .flower-reveal-caption, .reservation-details { animation: none; }
+  .bloom-in, .flower-reveal-caption, .reservation-details { animation: none; opacity: 1; }
   /* Keep a (near-instant) animation here: App waits for its end before jumping to the invitation. */
   .flower-reveal-bg { animation-duration: .01s; }
-  .flower-reveal::before, .flower-reveal::after, .flower-reveal-glow, .flower-reveal .flower-bloom,
+  .flower-reveal::before, .flower-reveal::after, .flower-reveal-glow,
   .flower-reveal-caption > span, .flower-reveal-caption p { animation: none; }
   .orbit-line { animation: none; stroke-dashoffset: 0; }
   .flower-reveal-sparkles { display: none; }

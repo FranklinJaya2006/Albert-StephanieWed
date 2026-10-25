@@ -5,16 +5,15 @@ import EventCard from "../components/EventCard";
 import Florals from "../components/Florals";
 import Monogram from "../components/Monogram";
 import Ornament from "../components/Ornament";
-import Photo from "../components/Photo";
+import FramedPhoto from "../components/FramedPhoto";
 import { invitation } from "../data/invitation";
-import { FlowerBloom } from "../components/Flower";
 
 type Person = (typeof invitation)["groom"];
 
-function PersonCard({ person, photo, seed }: { person: Person; photo: string; seed: number }) {
+function PersonCard({ person, photo }: { person: Person; photo: string }) {
   return (
     <div className="person">
-      <Photo src={photo} label={person.name} className="person-photo" torn={seed} width={200} height={267} />
+      <FramedPhoto src={photo} label={person.name} className="person-frame" />
       <h3 className="person-name">{person.name}</h3>
       <p className="person-parents">
         {person.parentsLabel}
@@ -28,7 +27,7 @@ function PersonCard({ person, photo, seed }: { person: Person; photo: string; se
   );
 }
 
-function Rsvp({ ready = true }: { ready?: boolean }) {
+function Rsvp({ shown = true, ready = true }: { shown?: boolean; ready?: boolean }) {
   const [searchParams] = useSearchParams();
   const guestName = searchParams.get("to");
   const [reserved, setReserved] = useState(false);
@@ -37,10 +36,23 @@ function Rsvp({ ready = true }: { ready?: boolean }) {
   const { groom, bride, coverNames, initials, photos } = invitation;
 
   // Fade-up text blocks as they scroll into view. Uses a data attribute (not className) so
-  // React re-renders never clobber the state.
+  // React re-renders never clobber the state. The blocks are marked hidden as soon as the page
+  // is laid out (still covered by the opening overlay) and only start being revealed once the
+  // overlay has gone, so the first screen fades up in view and nothing flickers.
   useEffect(() => {
-    if (!ready) return;
+    if (!shown) return;
     const items = document.querySelectorAll<HTMLElement>(".invitation :is(h1, h2, h3, p, blockquote, .person, .couple-name-part, .event-card, .love-story-photo, .couple-row-photo)");
+    items.forEach((el) => {
+      if (el.matches(".couple-names")) return;
+      if (el.closest(".person") && !el.matches(".person")) return;
+      if (el.closest(".event-card") && !el.matches(".event-card")) return;
+      if (el.closest(".reservation-card")) return;
+      if (!el.dataset.reveal) el.dataset.reveal = "hidden";
+    });
+  }, [shown]);
+
+  useEffect(() => {
+    if (!shown || !ready) return;
     const observer = new IntersectionObserver(
       (entries) => {
         for (const entry of entries) {
@@ -51,21 +63,14 @@ function Rsvp({ ready = true }: { ready?: boolean }) {
       },
       { threshold: 0.15 }
     );
-    items.forEach((el) => {
-      if (el.matches(".couple-names")) return;
-      if (el.closest(".person") && !el.matches(".person")) return;
-      if (el.closest(".event-card") && !el.matches(".event-card")) return;
-      if (el.closest(".reservation-card")) return;
-      el.dataset.reveal = "hidden";
-      observer.observe(el);
-    });
+    document.querySelectorAll<HTMLElement>('.invitation [data-reveal="hidden"]').forEach((el) => observer.observe(el));
     return () => observer.disconnect();
-  }, [ready]);
+  }, [shown, ready]);
 
 
 
   return (
-    <div className={`invitation${ready ? "" : " invitation-awaiting"}`} id="invitation-content" inert={!ready}>
+    <div className="invitation" id="invitation-content" inert={!ready} hidden={!shown}>
       <section className="section welcome">
         <Florals position="tl" />
         <Florals position="tr" />
@@ -90,15 +95,15 @@ function Rsvp({ ready = true }: { ready?: boolean }) {
       <section className="section couple">
         <Florals position="bl" />
         <Florals position="br" />
-        <PersonCard person={groom} photo={photos.groom} seed={11} />
-        <br className="couple-amp" />
-        <PersonCard person={bride} photo={photos.bride} seed={23} />
+        <PersonCard person={groom} photo={photos.groom} />
+        <Ornament />
+        <PersonCard person={bride} photo={photos.bride} />
       </section>
 
       <section className="section love-story" aria-labelledby="love-story-title">
         <Florals position="tr" />
         <h2 className="section-title" id="love-story-title">Our Love Story</h2>
-        <Photo src={photos.loveStory} label="Our Love Story photo" className="love-story-photo" torn={37} width={261} height={348} />
+        <FramedPhoto src={photos.loveStory} label="Our Love Story photo" className="love-story-photo" />
         <p className="story">{invitation.story}</p>
       </section>
 
@@ -121,14 +126,12 @@ function Rsvp({ ready = true }: { ready?: boolean }) {
       <section className="section reservation">
         <Florals position="tr" />
         <h2 className="section-title">Reservation</h2>
-        <p className="lead">Kindly confirm your attendance so we can prepare a seat for you:</p>
-        <Ornament />
+        <p className="lead">
+          We'd love to hear from you!
+          <br />
+          Please fill out the confirmation below:
+        </p>
         <div className="reservation-card">
-        <div className="reservation-header">
-          <FlowerBloom seed={7} />
-          <span className="reservation-header-eyebrow">You are invited</span>
-          <span className="reservation-header-title">A seat, a smile, a celebration.</span>
-        </div>
         <div className="reservation-details">
         {reserved ? (
           <p className="thank-you" role="status">Thank you for confirming your attendance!</p>
@@ -191,7 +194,7 @@ function Rsvp({ ready = true }: { ready?: boolean }) {
         <Ornament />
         <div className="couple-photo-row">
           {photos.portraits.map((src, index) => (
-            <Photo key={index} src={src} label={`Portrait of us ${index + 1}`} className="couple-row-photo" torn={41 + index * 17} width={261} height={391} />
+            <FramedPhoto key={index} src={src} label={`Portrait of us ${index + 1}`} className="couple-row-photo" />
           ))}
         </div>
         <p className="hashtag">{invitation.hashtag}</p>
@@ -201,7 +204,6 @@ function Rsvp({ ready = true }: { ready?: boolean }) {
         <Florals position="bl" />
         <h2 className="section-title">Kind Words</h2>
         <p className="lead">Please leave your sincere prayer and wishes to us and our families:</p>
-        <Ornament />
         {wished ? (
           <p className="thank-you">Thank you for your kind words and prayers!</p>
         ) : (

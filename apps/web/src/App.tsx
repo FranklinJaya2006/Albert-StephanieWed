@@ -1,5 +1,6 @@
 import { BrowserRouter } from 'react-router-dom'
 import { useEffect, useState } from 'react'
+import { flushSync } from 'react-dom'
 import Onboarding from './pages/Onboarding'
 import Rsvp from './pages/Rsvp'
 import FlowerReveal from './components/FlowerReveal'
@@ -8,19 +9,38 @@ import { invitation } from './data/invitation'
 function App() {
   const [opened, setOpened] = useState(false)
   const [blooming, setBlooming] = useState(false)
+  const [finished, setFinished] = useState(false)
+  // The invitation is built (hidden) shortly after the cover appears, with its photos fetched, so
+  // none of that work lands in the middle of the opening animation.
+  const [mounted, setMounted] = useState(false)
+  const [shown, setShown] = useState(false)
+  useEffect(() => {
+    const id = window.setTimeout(() => {
+      setMounted(true)
+      const { groom, bride, loveStory, portraits } = invitation.photos
+      for (const src of [groom, bride, loveStory, ...portraits]) {
+        if (src) new Image().src = src
+      }
+    }, 300)
+    return () => window.clearTimeout(id)
+  }, [])
   useEffect(() => {
     if (!blooming) return
     const previous = document.body.style.overflow
     document.body.style.overflow = 'hidden'
     return () => { document.body.style.overflow = previous }
   }, [blooming])
-  // Called once the opening backdrop fully covers the cover, so the jump to the invitation is
-  // never seen: the page moves while hidden, then the backdrop fades out onto the invitation.
-  // Also called when the animation ends: with reduced motion both finish in the same instant,
-  // and a repeat jump is a no-op otherwise.
   const jumpToInvitation = () => {
     const content = document.getElementById('invitation-content')
     if (content) window.scrollTo({ top: window.scrollY + content.getBoundingClientRect().top, behavior: 'instant' })
+  }
+  // Called once the opening backdrop fully covers the cover: the invitation is laid out and the
+  // page jumps to it while nobody can see, then the backdrop fades out onto it. Also called when
+  // the animation ends: with reduced motion both finish in the same instant; otherwise a repeat
+  // is a no-op.
+  const reveal = () => {
+    flushSync(() => setShown(true))
+    jumpToInvitation()
   }
   return (
     <BrowserRouter>
@@ -35,12 +55,12 @@ function App() {
           </div>
         </aside>
         <main className="invitation-page-panel">
-          <Onboarding opening={blooming} onOpen={() => {
+          <Onboarding opened={opened} onOpen={() => {
             setOpened(true)
             setBlooming(true)
           }} />
-          {opened && <Rsvp ready={!blooming} />}
-          {blooming && <FlowerReveal onCovered={jumpToInvitation} onComplete={() => { jumpToInvitation(); setBlooming(false) }} />}
+          {(mounted || opened) && <Rsvp shown={shown} ready={!blooming} />}
+          {mounted && !finished && <FlowerReveal active={blooming} onCovered={reveal} onComplete={() => { reveal(); setBlooming(false); setFinished(true) }} />}
         </main>
       </div>
     </BrowserRouter>

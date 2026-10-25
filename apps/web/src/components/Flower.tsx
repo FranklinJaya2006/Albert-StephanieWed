@@ -1,36 +1,41 @@
-import { useMemo } from "react";
+import { memo, useMemo } from "react";
 import type { CSSProperties } from "react";
 import { round2 as n, seeded } from "../lib/rng";
 import { useDefsId } from "../lib/useDefsId";
 
-// One flower, used everywhere (corner garlands, the RSVP card, the opening animation) so they
-// all match. Layered, slightly uneven petals, each shaded lit-centre to darker-edge, read as a
-// real bloom (peony/ranunculus-like) rather than a flat icon. Light slate blue dominates; deeper slate
-// shows up in the middle of some flowers (`deep`) and as the odd single petal, so no two look alike.
+// One flower, used everywhere (corner garlands, the RSVP card, the opening animation) so they all
+// match: a rose seen from above, in pale slate blue.
 
 // Gradients live inside each host <svg>: one in a display:none <svg> would not render.
 export function FlowerDefs({ id }: { id: string }) {
-  // Petals: lit in the middle, darker at the edges, so each one reads as a rounded, cupped petal.
-  const petal = (key: string, lit: string, mid: string, edge: string) => (
-    <radialGradient id={`${id}-${key}`} cx="0.5" cy="0.3" r="0.74">
-      <stop offset="0" stopColor={lit} />
-      <stop offset="0.55" stopColor={mid} />
-      <stop offset="1" stopColor={edge} />
-    </radialGradient>
+  // Petals run from a shaded base to a lit tip.
+  const petal = (key: string, base: string, mid: string, tip: string) => (
+    <linearGradient id={`${id}-${key}`} x1="0.5" y1="1" x2="0.5" y2="0">
+      <stop offset="0" stopColor={base} />
+      <stop offset="0.5" stopColor={mid} />
+      <stop offset="1" stopColor={tip} />
+    </linearGradient>
   );
   return (
     <defs>
-      {/* Light slate blue (the page's slate #708191, tinted), outer layer to core */}
-      {petal("o", "#e9eef3", "#bccad6", "#8697a8")}
-      {petal("m", "#dde5ec", "#aebfce", "#7d90a2")}
-      {petal("i", "#d0dbe5", "#9fb3c5", "#728496")}
-      {petal("c", "#c2cfdb", "#8fa3b6", "#667889")}
-      {/* Deeper slate, for the middle of some flowers and the odd petal (never navy) */}
-      {petal("dm", "#8a9db0", "#667a8e", "#46566a")}
-      {petal("di", "#7e92a6", "#5c7084", "#42515f")}
-      {petal("dc", "#72869a", "#546679", "#3c4a58")}
-      {/* Blush pink, for the second flower type (Blossom) */}
-      {petal("p", "#fff4f5", "#f3c8ce", "#d98fa0")}
+      {/* Pale slate blue (the page slate #708191, tinted) */}
+      {petal("o", "#9cb2c7", "#c9d7e4", "#f1f5f9")}
+      {petal("m", "#8aa2b9", "#b8cadb", "#e6eef5")}
+      {petal("i", "#7791aa", "#a3bad0", "#d6e3ef")}
+      {petal("c", "#6a859f", "#94aec6", "#c6d8e8")}
+      {/* Deeper slate, for the heart of some roses (never navy) */}
+      {petal("dm", "#5f7690", "#86a0b8", "#b9cadb")}
+      {/* Blush pink, for the small blossoms */}
+      <radialGradient id={`${id}-p`} cx="0.5" cy="0.25" r="0.74">
+        <stop offset="0" stopColor="#fff4f5" />
+        <stop offset="0.55" stopColor="#f3c8ce" />
+        <stop offset="1" stopColor="#d98fa0" />
+      </radialGradient>
+      {/* Slate-blue foliage, for the tone-on-tone arrangement */}
+      <linearGradient id={`${id}-ls`} x1="0" y1="0" x2="1" y2="0">
+        <stop offset="0" stopColor="#4a6078" />
+        <stop offset="1" stopColor="#a6b9cb" />
+      </linearGradient>
       {/* Fresh light green leaves, darker at the base */}
       <linearGradient id={`${id}-leaf`} x1="0" y1="0" x2="1" y2="0">
         <stop offset="0" stopColor="#79a850" />
@@ -40,109 +45,50 @@ export function FlowerDefs({ id }: { id: string }) {
   );
 }
 
-// A petal pointing up (-y), base at the origin: broad shoulders and a softly notched tip.
+// A broad, cupped rose petal pointing up (-y) from the flower's centre, and the lit roll of its rim.
 function petalPath(L: number, W: number) {
-  const hw = W / 2;
-  return [
-    "M0 0",
-    `C${n(-hw * 1.05)} ${n(-L * 0.12)} ${n(-hw * 1.28)} ${n(-L * 0.6)} ${n(-hw * 0.72)} ${n(-L * 0.9)}`,
-    `C${n(-hw * 0.46)} ${n(-L * 1.04)} ${n(-hw * 0.12)} ${n(-L * 1.02)} 0 ${n(-L * 0.95)}`,
-    `C${n(hw * 0.12)} ${n(-L * 1.02)} ${n(hw * 0.46)} ${n(-L * 1.04)} ${n(hw * 0.72)} ${n(-L * 0.9)}`,
-    `C${n(hw * 1.28)} ${n(-L * 0.6)} ${n(hw * 1.05)} ${n(-L * 0.12)} 0 0Z`,
-  ].join(" ");
+  return `M0 0C${n(-W * 0.62)} ${n(-L * 0.08)} ${n(-W * 0.7)} ${n(-L * 0.75)} ${n(-W * 0.38)} ${n(-L * 0.95)}C${n(-W * 0.2)} ${n(-L * 1.03)} ${n(W * 0.2)} ${n(-L * 1.03)} ${n(W * 0.38)} ${n(-L * 0.95)}C${n(W * 0.7)} ${n(-L * 0.75)} ${n(W * 0.62)} ${n(-L * 0.08)} 0 0Z`;
+}
+function rimPath(L: number, W: number) {
+  return `M${n(-W * 0.36)} ${n(-L * 0.93)}C${n(-W * 0.18)} ${n(-L * 1.0)} ${n(W * 0.18)} ${n(-L * 1.0)} ${n(W * 0.36)} ${n(-L * 0.93)}`;
 }
 
-const LAYERS = [
-  { count: 8, len: 1.0, wid: 0.8, grad: "o" },
-  { count: 7, len: 0.8, wid: 0.68, grad: "m" },
-  { count: 6, len: 0.6, wid: 0.56, grad: "i" },
-  { count: 5, len: 0.4, wid: 0.44, grad: "c" },
-];
+// Petals spiral out from the heart at the golden angle, each a little larger than the last: the
+// way a real rose's petals are arranged. Drawn outermost first so inner petals sit on top.
+const GOLDEN = 137.508;
 
-type Petal = { layer: number; grad: string; rot: number; len: number; wid: number; d: string; delay: number };
-
-// deep: 0 = all light, 1 = deeper core, 2 = deeper core and inner ring.
-function buildPetals(seed: number, R: number, deep: number): Petal[] {
-  const rand = seeded(seed);
-  const petals: Petal[] = [];
-  LAYERS.forEach((layer, li) => {
-    const start = rand() * 360;
-    for (let i = 0; i < layer.count; i++) {
-      const len = R * layer.len * (0.92 + rand() * 0.16);
-      const wid = R * layer.wid * (0.92 + rand() * 0.16);
-      let grad = layer.grad;
-      if (li === 1 && rand() < 0.07) grad = "dm";
-      if (li === 2 && (deep >= 2 || rand() < 0.1)) grad = "di";
-      if (li === 3 && deep >= 1) grad = "dc";
-      petals.push({
-        layer: li,
-        grad,
-        rot: n(start + (i * 360) / layer.count + (rand() - 0.5) * 14),
-        len,
-        wid,
-        d: petalPath(len, wid),
-        // When animating, the core opens first and the outer petals sweep open last.
-        delay: Math.round((LAYERS.length - 1 - li) * 280 + i * 55 + rand() * 60),
-      });
+export function Flower({ seed, size, defsId, deep = 0 }: { seed: number; size: number; defsId: string; deep?: number }) {
+  // Small roses need fewer petals to read as full: this keeps the arrangement light to draw.
+  const count = size > 30 ? 20 : size > 14 ? 15 : 12;
+  const petals = useMemo(() => {
+    const start = seeded(seed)() * 360;
+    return Array.from({ length: count }, (_, i) => {
+      const t = (i + 1) / count;
+      const len = size * (0.22 + 0.78 * t ** 0.9);
+      const wid = len * (1.25 - 0.35 * t);
+      let g = t > 0.7 ? "o" : t > 0.45 ? "m" : t > 0.25 ? "i" : "c";
+      if (deep >= 1 && t <= 0.3) g = "dm";
+      return { i, g, rot: n(start + i * GOLDEN), d: petalPath(len, wid), rim: rimPath(len, wid) };
+    }).reverse();
+  }, [seed, size, deep, count]);
+  // The tight spiral at the very heart.
+  const swirl = useMemo(() => {
+    const pts: string[] = [];
+    for (let a = 0; a <= Math.PI * 3.4; a += 0.25) {
+      const r = size * 0.016 * a;
+      pts.push(`${n(Math.cos(a) * r)} ${n(Math.sin(a) * r)}`);
     }
-  });
-  return petals;
-}
-
-export function Flower({
-  seed,
-  size,
-  defsId,
-  detail = false,
-  animate = false,
-  deep = 0,
-}: {
-  seed: number;
-  size: number;
-  defsId: string;
-  detail?: boolean;
-  animate?: boolean;
-  deep?: number;
-}) {
-  const petals = useMemo(() => buildPetals(seed, size, deep), [seed, size, deep]);
-  const stamens = useMemo(() => {
-    const rand = seeded(seed + 101);
-    return Array.from({ length: 16 }, () => {
-      const a = rand() * Math.PI * 2;
-      const r = size * (0.03 + rand() * 0.09);
-      return { x: n(Math.cos(a) * r), y: n(Math.sin(a) * r), r: n(size * (0.012 + rand() * 0.01)) };
-    });
-  }, [seed, size]);
-
+    return `M${pts.join(" L")}`;
+  }, [size]);
   return (
     <g>
-      {petals.map((p, i) => (
-        <g key={i} transform={`rotate(${p.rot})`}>
-          <g
-            className={animate ? "flower-grow" : undefined}
-            style={animate ? ({ "--delay": `${p.delay}ms` } as CSSProperties) : undefined}
-          >
-            <path d={p.d} fill={`url(#${defsId}-${p.grad})`} className="flower-petal" strokeWidth={Math.max(0.25, size * 0.006)} />
-            {detail && p.layer < 2 && (
-              <g className="flower-vein" strokeWidth={Math.max(0.25, size * 0.005)}>
-                <path d={`M0 ${n(-p.len * 0.1)} L0 ${n(-p.len * 0.78)}`} />
-                <path d={`M0 ${n(-p.len * 0.14)} Q${n(-p.wid * 0.2)} ${n(-p.len * 0.45)} ${n(-p.wid * 0.3)} ${n(-p.len * 0.78)}`} />
-                <path d={`M0 ${n(-p.len * 0.14)} Q${n(p.wid * 0.2)} ${n(-p.len * 0.45)} ${n(p.wid * 0.3)} ${n(-p.len * 0.78)}`} />
-              </g>
-            )}
-          </g>
+      {petals.map((p) => (
+        <g key={p.i} transform={`rotate(${p.rot})`}>
+          <path d={p.d} fill={`url(#${defsId}-${p.g})`} className="flower-petal" strokeWidth={Math.max(0.2, size * 0.006)} />
+          <path d={p.rim} className="flower-rim" strokeWidth={Math.max(0.25, size * 0.01)} />
         </g>
       ))}
-      <g
-        className={animate ? "flower-core" : undefined}
-        style={animate ? ({ "--delay": `${LAYERS.length * 280 + 200}ms` } as CSSProperties) : undefined}
-      >
-        <circle r={n(size * 0.1)} fill="#3c4a58" />
-        {stamens.map((s, i) => (
-          <circle key={i} cx={s.x} cy={s.y} r={s.r} className="flower-stamen" />
-        ))}
-        <circle r={n(size * 0.03)} className="flower-pistil" />
-      </g>
+      <path d={swirl} className="flower-swirl" strokeWidth={Math.max(0.2, size * 0.008)} />
     </g>
   );
 }
@@ -153,37 +99,21 @@ export function Leaf({
   rot,
   len,
   defsId,
-  detail = false,
-  animate = false,
-  delay = 0,
+  tone = "leaf",
 }: {
   x: number;
   y: number;
   rot: number;
   len: number;
   defsId: string;
-  detail?: boolean;
-  animate?: boolean;
-  delay?: number;
+  tone?: "leaf" | "ls";
 }) {
   const w = len * 0.27;
   const d = `M0 0 C${n(len * 0.2)} ${n(-w * 1.15)} ${n(len * 0.68)} ${n(-w * 1.05)} ${n(len)} 0 C${n(len * 0.68)} ${n(w * 1.05)} ${n(len * 0.2)} ${n(w * 1.15)} 0 0Z`;
   return (
     <g transform={`translate(${x} ${y}) rotate(${rot})`}>
-      <g
-        className={animate ? "flower-grow" : undefined}
-        style={animate ? ({ "--delay": `${delay}ms` } as CSSProperties) : undefined}
-      >
-        <path d={d} fill={`url(#${defsId}-leaf)`} className="leaf-shape" strokeWidth={Math.max(0.25, len * 0.012)} />
-        <path d={`M0 0 L${n(len * 0.94)} 0`} className="leaf-vein" strokeWidth={Math.max(0.3, len * 0.014)} />
-        {detail &&
-          [0.28, 0.5, 0.72].map((t) => (
-            <g key={t} className="leaf-vein" strokeWidth={Math.max(0.25, len * 0.01)}>
-              <path d={`M${n(len * t)} 0 L${n(len * (t + 0.14))} ${n(-w * 0.62)}`} />
-              <path d={`M${n(len * t)} 0 L${n(len * (t + 0.14))} ${n(w * 0.62)}`} />
-            </g>
-          ))}
-      </g>
+      <path d={d} fill={`url(#${defsId}-${tone})`} className={tone === "ls" ? "leaf-shape leaf-slate" : "leaf-shape"} strokeWidth={Math.max(0.25, len * 0.012)} />
+      <path d={`M0 0 L${n(len * 0.94)} 0`} className="leaf-vein" strokeWidth={Math.max(0.3, len * 0.014)} />
     </g>
   );
 }
@@ -220,19 +150,7 @@ function blossomPetal(L: number, W: number) {
   ].join(" ");
 }
 
-export function Blossom({
-  seed,
-  size,
-  defsId,
-  animate = false,
-  delay = 0,
-}: {
-  seed: number;
-  size: number;
-  defsId: string;
-  animate?: boolean;
-  delay?: number;
-}) {
+export function Blossom({ seed, size, defsId }: { seed: number; size: number; defsId: string }) {
   const parts = useMemo(() => {
     const rand = seeded(seed);
     const start = rand() * 72;
@@ -248,10 +166,7 @@ export function Blossom({
     return { petals, stamens };
   }, [seed, size]);
   return (
-    <g
-      className={animate ? "flower-grow" : undefined}
-      style={animate ? ({ "--delay": `${delay}ms` } as CSSProperties) : undefined}
-    >
+    <g>
       {parts.petals.map((p, i) => (
         <path
           key={i}
@@ -271,52 +186,67 @@ export function Blossom({
   );
 }
 
-const RING_LEAVES = 7;
-// Leaves whose gap (the slot after them) gets a blossom; two gaps stay empty so it isn't a neat ring.
-const BLOSSOM_GAPS = [0, 1, 2, 4, 5];
+// The arrangement for the RSVP card and the opening animation: a dense, slightly off-centre mass of
+// roses in tones of one slate blue, light and deep mixed, over a fan of slate foliage. Back to front.
+const FOLIAGE = [
+  { x: -30, y: 34, rot: 158, len: 62 },
+  { x: 30, y: 34, rot: 22, len: 62 },
+  { x: -52, y: 8, rot: 188, len: 52 },
+  { x: 52, y: 8, rot: -8, len: 52 },
+  { x: -18, y: 52, rot: 118, len: 50 },
+  { x: 20, y: 52, rot: 62, len: 50 },
+  { x: -44, y: -26, rot: 228, len: 44 },
+  { x: 44, y: -26, rot: -48, len: 44 },
+];
+// size = flower radius; deep darkens the heart. Listed back to front.
+const ROSES = [
+  { x: -62, y: -20, size: 13, deep: 1, seed: 31 },
+  { x: 63, y: -14, size: 12, deep: 0, seed: 32 },
+  { x: -10, y: 62, size: 13, deep: 1, seed: 33 },
+  { x: 14, y: -62, size: 12, deep: 0, seed: 34 },
+  { x: 0, y: -42, size: 21, deep: 0, seed: 21 },
+  { x: -52, y: 14, size: 25, deep: 1, seed: 22 },
+  { x: 51, y: 12, size: 26, deep: 0, seed: 23 },
+  { x: -27, y: 41, size: 25, deep: 0, seed: 24 },
+  { x: 28, y: 43, size: 27, deep: 1, seed: 25 },
+  { x: -34, y: -22, size: 27, deep: 0, seed: 26 },
+  { x: 33, y: -26, size: 28, deep: 1, seed: 27 },
+  { x: 0, y: 4, size: 38, deep: 1, seed: 7 },
+];
 
-// Stand-alone bloom with a ring of leaves, for the RSVP card and the opening animation.
-export function FlowerBloom({
-  className = "",
-  seed = 7,
-  animate = false,
-  deep = 2,
-}: {
-  className?: string;
-  seed?: number;
-  animate?: boolean;
-  deep?: number;
-}) {
-  const id = useDefsId();
-  // Uneven angles and lengths: evenly spaced identical leaves look like a star, not a plant.
-  const leaves = useMemo(() => {
-    const rand = seeded(seed + 7);
-    return Array.from({ length: RING_LEAVES }, (_, i) => ({
-      rot: n(i * (360 / RING_LEAVES) + 12 + (rand() - 0.5) * 18),
-      len: n(80 + rand() * 18),
-    }));
-  }, [seed]);
-  // Blossoms sit between the leaf tips, behind the main flower.
-  const blossoms = useMemo(() => {
-    const rand = seeded(seed + 31);
-    return BLOSSOM_GAPS.map((gap, i) => {
-      const a = (((gap + 0.5) * 360) / RING_LEAVES + 12 + (rand() - 0.5) * 10) * (Math.PI / 180);
-      const r = 66 + rand() * 10;
-      return { x: n(Math.cos(a) * r), y: n(Math.sin(a) * r), size: n(15 + rand() * 6), seed: seed + 40 + i };
-    });
-  }, [seed]);
-  return (
-    <svg className={`flower-bloom ${className}`} viewBox="-100 -100 200 200" aria-hidden="true">
-      <FlowerDefs id={id} />
-      {leaves.map((l, i) => (
-        <Leaf key={i} x={0} y={0} rot={l.rot} len={l.len} defsId={id} detail animate={animate} delay={i * 70} />
-      ))}
-      {blossoms.map((b, i) => (
-        <g key={b.seed} transform={`translate(${b.x} ${b.y})`}>
-          <Blossom seed={b.seed} size={b.size} defsId={id} animate={animate} delay={500 + i * 140} />
-        </g>
-      ))}
-      <Flower seed={seed} size={64} defsId={id} detail animate={animate} deep={deep} />
-    </svg>
-  );
+// Each rose, and the foliage, is its own small <svg> laid out in a plain div. The browser draws each
+// one once and then only moves/fades that picture, so the opening stays smooth. (Animating shapes
+// inside one big SVG would repaint all of it every frame.)
+type Part = { style: CSSProperties; box: number };
+function place(x: number, y: number, half: number): Part {
+  return {
+    box: half,
+    style: { left: `${n(((x - half + 100) / 200) * 100)}%`, top: `${n(((y - half + 100) / 200) * 100)}%`, width: `${n((half * 2 * 100) / 200)}%` },
+  };
 }
+const ROSE_PARTS = ROSES.map((r) => ({ ...r, ...place(r.x, r.y, r.size * 1.15) }));
+
+export const FlowerBloom = memo(function FlowerBloom({ className = "", animate = false }: { className?: string; animate?: boolean }) {
+  const id = useDefsId();
+  const part = (style: CSSProperties, delay: number): { className: string; style: CSSProperties } => ({
+    className: animate ? "bloom-part bloom-in" : "bloom-part",
+    style: animate ? { ...style, "--delay": `${delay}ms` } as CSSProperties : style,
+  });
+  return (
+    <div className={`flower-bloom ${className}`} aria-hidden="true">
+      <svg width="0" height="0" style={{ position: "absolute" }}>
+        <FlowerDefs id={id} />
+      </svg>
+      <svg {...part({ left: 0, top: 0, width: "100%" }, 250)} viewBox="-100 -100 200 200">
+        {FOLIAGE.map((l, i) => (
+          <Leaf key={i} {...l} defsId={id} tone="ls" />
+        ))}
+      </svg>
+      {ROSE_PARTS.map((r, i) => (
+        <svg key={r.seed} {...part(r.style, 600 + i * 130)} viewBox={`${-r.box} ${-r.box} ${r.box * 2} ${r.box * 2}`}>
+          <Flower seed={r.seed} size={r.size} defsId={id} deep={r.deep} />
+        </svg>
+      ))}
+    </div>
+  );
+})

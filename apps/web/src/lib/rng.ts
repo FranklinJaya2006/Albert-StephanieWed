@@ -1,4 +1,4 @@
-// Small seeded PRNG: flowers and torn edges look hand-made, yet are identical on every render.
+// Small seeded PRNG: flowers look hand-made, yet are identical on every render.
 export function seeded(seed: number) {
   let s = seed >>> 0;
   return () => {

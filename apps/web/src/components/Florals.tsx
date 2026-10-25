@@ -1,3 +1,4 @@
+import { memo } from "react";
 import { useDefsId } from "../lib/useDefsId";
 import { Blossom, Bud, Flower, FlowerDefs, Leaf } from "./Flower";
 
@@ -47,7 +48,7 @@ const BLOSSOMS = [
   { x: 47, y: 15, size: 9, seed: 13 },
 ];
 
-function Florals({ position }: { position: "tl" | "tr" | "bl" | "br" }) {
+const Florals = memo(function Florals({ position }: { position: "tl" | "tr" | "bl" | "br" }) {
   const id = useDefsId();
   return (
     <svg className={`florals florals-${position}`} viewBox="0 0 180 110" aria-hidden="true">
@@ -67,12 +68,13 @@ function Florals({ position }: { position: "tl" | "tr" | "bl" | "br" }) {
         </g>
       ))}
       {FLOWERS.map((f) => (
-        <g key={f.seed} transform={`translate(${f.x} ${f.y})`}>
+        // Bottom garlands are flipped upside down by CSS; flip each rose back so it stays upright.
+        <g key={f.seed} transform={`translate(${f.x} ${f.y})${position[0] === "b" ? " scale(1 -1)" : ""}`}>
           <Flower seed={f.seed} size={f.size} defsId={id} deep={f.deep} />
         </g>
       ))}
     </svg>
   );
-}
+})
 
 export default Florals;

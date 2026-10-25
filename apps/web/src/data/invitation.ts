@@ -1,6 +1,11 @@
 // Placeholder wedding content — replace names/dates/venues here.
 // Photos: drop files into apps/web/public/photos/ and set the paths below (e.g. "/photos/cover.jpg").
 // An empty string renders a tinted placeholder in the palette color.
+
+// Photo paths are plain file names (a leading slash is fine). This prefixes the site's base path so
+// they also work when the site is served from a subfolder (GitHub Pages).
+const asset = (file: string) => (file ? `${import.meta.env.BASE_URL}${file.replace(/^\//, "")}` : file);
+
 export const invitation = {
   initials: { first: "A", second: "S" },
   // Nama tampilan halaman pembuka; bebas berbeda dari nama lengkap di bawah.
@@ -46,13 +51,13 @@ export const invitation = {
     mapsQuery: "?q=Bambuden+3+(New+Bambuden)",
   },
   photos: {
-    loveStory: "Portrait-web.jpg",
-    desktop: "/Onboard_photo-clean.png",
-    cover: "/Onboard_photo-clean.png",
-    groom: "/Groom-web.jpg",
-    bride: "/Bride-web.jpg",
-    // Foto vertikal, urut dari atas ke bawah.
-    portraits: ["Gallery1-web.jpg", "Gallery2-web.jpg"],
+    loveStory: asset("Portrait-web.jpg"),
+    desktop: asset("couple-cutout-web.jpg"),
+    cover: asset("couple-cutout-web.jpg"),
+    groom: asset("Groom-web.jpg"),
+    bride: asset("Bride-web.jpg"),
+    // Foto vertikal (2:3), 4 foto: kiri-kanan, lalu baris berikutnya. "" = placeholder sampai file ada.
+    portraits: [asset("Gallery1-web.jpg"), asset("Gallery2-web.jpg"), asset(""), asset("")],
   },
 };
 
