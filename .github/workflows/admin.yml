@@ -1,0 +1,54 @@
+name: Admin + API CI/CD
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "apps/booth/**"
+      - "apps/back/**"
+      - "tsconfig.base.json"
+      - "deploy/Dockerfile.back"
+      - "apps/web/src/pages/Admin.tsx"
+      - "apps/web/src/lib/**"
+      - "apps/web/src/data/**"
+      - "apps/web/src/index.css"
+      - "apps/web/package.json"
+      - "deploy/Dockerfile.admin"
+      - "deploy/Caddyfile.frontend"
+      - "package.json"
+      - "package-lock.json"
+      - ".github/workflows/_component.yml"
+      - ".dockerignore"
+      - "deploy/update-service.sh"
+      - ".github/workflows/admin.yml"
+  pull_request:
+    paths:
+      - "apps/booth/**"
+      - "apps/back/**"
+      - "tsconfig.base.json"
+      - "deploy/Dockerfile.back"
+      - "apps/web/src/pages/Admin.tsx"
+      - "apps/web/src/lib/**"
+      - "apps/web/src/data/**"
+      - "apps/web/src/index.css"
+      - "apps/web/package.json"
+      - "deploy/Dockerfile.admin"
+      - "deploy/Caddyfile.frontend"
+      - "package.json"
+      - "package-lock.json"
+      - ".github/workflows/_component.yml"
+      - ".dockerignore"
+      - "deploy/update-service.sh"
+      - ".github/workflows/admin.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  pipeline:
+    uses: ./.github/workflows/_component.yml
+    with:
+      component: admin
+    secrets: inherit

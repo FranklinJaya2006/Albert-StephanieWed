@@ -1,0 +1,18 @@
+# Build context: repository root. Ships only this frontend.
+FROM node:24-alpine AS build
+WORKDIR /repo
+COPY package.json package-lock.json ./
+COPY apps/back/package.json apps/back/
+COPY apps/web/package.json apps/web/
+COPY apps/booth/package.json apps/booth/
+RUN npm ci -w web -w booth
+COPY apps/web apps/web
+COPY apps/booth apps/booth
+RUN npm run build -w booth
+
+FROM caddy:2-alpine
+COPY deploy/Caddyfile.frontend /etc/caddy/Caddyfile
+COPY --from=build /repo/apps/booth/dist /srv
+EXPOSE 80
+HEALTHCHECK --interval=15s --timeout=3s --start-period=5s \
+  CMD wget -q -O /dev/null http://127.0.0.1/healthz || exit 1

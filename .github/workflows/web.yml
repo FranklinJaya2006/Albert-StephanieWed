@@ -1,0 +1,44 @@
+name: Invitation + API CI/CD
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "apps/web/**"
+      - "apps/back/**"
+      - "tsconfig.base.json"
+      - "deploy/Dockerfile.back"
+      - "deploy/Dockerfile.web"
+      - "deploy/Caddyfile.frontend"
+      - "package.json"
+      - "package-lock.json"
+      - ".github/workflows/_component.yml"
+      - ".dockerignore"
+      - "deploy/update-service.sh"
+      - ".github/workflows/web.yml"
+  pull_request:
+    paths:
+      - "apps/web/**"
+      - "apps/back/**"
+      - "tsconfig.base.json"
+      - "deploy/Dockerfile.back"
+      - "deploy/Dockerfile.web"
+      - "deploy/Caddyfile.frontend"
+      - "package.json"
+      - "package-lock.json"
+      - ".github/workflows/_component.yml"
+      - ".dockerignore"
+      - "deploy/update-service.sh"
+      - ".github/workflows/web.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  pipeline:
+    uses: ./.github/workflows/_component.yml
+    with:
+      component: web
+    secrets: inherit

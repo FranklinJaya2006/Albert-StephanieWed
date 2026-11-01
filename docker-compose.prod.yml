@@ -3,9 +3,9 @@
 name: birdies-gift
 
 services:
-  # Public entry point (ports 80/443): invitation, booth, /api -> back, and n8n.
+  # Public entry point (ports 80/443): invitation, guest admin, API and n8n.
   edge:
-    image: ${IMAGE_PREFIX:?set IMAGE_PREFIX in .env}-edge:${IMAGE_TAG:-latest}
+    image: ${IMAGE_PREFIX:?set IMAGE_PREFIX in .env}-edge:${EDGE_IMAGE_TAG:-${IMAGE_TAG:-latest}}
     restart: unless-stopped
     ports:
       - "80:80"
@@ -21,18 +21,29 @@ services:
       - caddy_data:/data
       - caddy_config:/config
     depends_on:
+      web:
+        condition: service_healthy
+      admin:
+        condition: service_healthy
       back:
         condition: service_healthy
       n8n:
         condition: service_started
 
-  # Photo-booth API. Photos live in the booth_data volume.
+  web:
+    image: ${IMAGE_PREFIX:?set IMAGE_PREFIX in .env}-web:${WEB_IMAGE_TAG:-${IMAGE_TAG:-latest}}
+    restart: unless-stopped
+
+  admin:
+    image: ${IMAGE_PREFIX:?set IMAGE_PREFIX in .env}-admin:${ADMIN_IMAGE_TAG:-${IMAGE_TAG:-latest}}
+    restart: unless-stopped
+
+  # Guest API. Keep the existing booth_data volume: it holds the wedding database.
   back:
-    image: ${IMAGE_PREFIX:?set IMAGE_PREFIX in .env}-back:${IMAGE_TAG:-latest}
+    image: ${IMAGE_PREFIX:?set IMAGE_PREFIX in .env}-back:${BACK_IMAGE_TAG:-${IMAGE_TAG:-latest}}
     restart: unless-stopped
     environment:
-      BOOTH_ADMIN_KEY: ${BOOTH_ADMIN_KEY:?set BOOTH_ADMIN_KEY in .env}
-      WEDDING_ADMIN_USERNAME: ${WEDDING_ADMIN_USERNAME:-admin}
+      WEDDING_ADMIN_USERNAME: ${WEDDING_ADMIN_USERNAME:?set WEDDING_ADMIN_USERNAME in .env}
       WEDDING_ADMIN_PASSWORD: ${WEDDING_ADMIN_PASSWORD:?set WEDDING_ADMIN_PASSWORD in .env}
     volumes:
       - booth_data:/data

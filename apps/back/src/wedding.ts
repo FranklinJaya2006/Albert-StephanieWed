@@ -33,7 +33,7 @@ export function registerWedding(app: FastifyInstance, options: Options) {
   app.addHook("onClose", async () => { db.close(); });
   const sessionCookie = (value: string, age: number) => `wedding_session=${value}; Path=/api/wedding; HttpOnly; SameSite=Strict; Max-Age=${age}${options.secureCookies ? "; Secure" : ""}`;
   const adminName = options.adminName || "admin";
-  const configured = Boolean(options.adminPassword && options.adminPassword.length >= 12);
+  const configured = Boolean(options.adminName && options.adminPassword && options.adminPassword.length >= 8);
   const expectedPassword = scryptSync(options.adminPassword ?? randomBytes(32).toString("hex"), "wedding-admin-password", 64);
   const limits = new Map<string, { count: number; until: number }>();
   function allowed(request: FastifyRequest, kind: string, max: number) {
@@ -127,17 +127,24 @@ export function registerWedding(app: FastifyInstance, options: Options) {
     return reply.status(201).send({ id, name: name.trim(), message: message.trim(), createdAt });
   });
   app.post<{ Body: { username?: unknown; password?: unknown } }>("/api/wedding/login", { bodyLimit: 2048 }, async (request, reply) => {
-    if (!configured) return reply.status(503).send({ error: "Admin sign-in is not configured. Set WEDDING_ADMIN_PASSWORD on the server (at least 12 characters)." });
-    if (!allowed(request, "login", 10)) return reply.status(429).send({ error: "Too many sign-in attempts. Please try again in 15 minutes." });
+    if (!configured) return reply.status(503).send({ error: "Admin sign-in is not configured. Set WEDDING_ADMIN_USERNAME and WEDDING_ADMIN_PASSWORD on the server (password at least 8 characters)." });
+    const attempts = limits.get(`login:${request.ip}`);
+    if (attempts && attempts.until > Date.now() && attempts.count >= 10) return reply.status(429).send({ error: "Too many sign-in attempts. Please try again in 15 minutes." });
     const { username, password } = request.body ?? {};
     const supplied = scryptSync(typeof password === "string" && password.length <= 256 ? password : "", "wedding-admin-password", 64);
-    if (!timingSafeEqual(supplied, expectedPassword) || username !== adminName) return reply.status(401).send({ error: "Incorrect username or password." });
+    const validPassword = timingSafeEqual(supplied, expectedPassword);
+    const validUsername = timingSafeEqual(Buffer.from(hash(typeof username === "string" ? username : "")), Buffer.from(hash(adminName)));
+    if (!validPassword || !validUsername) {
+      allowed(request, "login", 10);
+      return reply.status(401).send({ error: "Incorrect username or password." });
+    }
+    limits.delete(`login:${request.ip}`);
     db.prepare("DELETE FROM admin_sessions WHERE expires_at<=?").run(Date.now());
     const token = randomBytes(32).toString("hex");
     db.prepare("INSERT INTO admin_sessions VALUES(?,?)").run(hash(token), Date.now() + 12 * 3600000);
-    return reply.header("Set-Cookie", sessionCookie(token, 12 * 3600)).send({ username: adminName });
+    return reply.header("Set-Cookie", sessionCookie(token, 12 * 3600)).send({ ok: true });
   });
-  app.get("/api/wedding/admin/session", async () => ({ username: adminName }));
+  app.get("/api/wedding/admin/session", async () => ({ ok: true }));
   app.post("/api/wedding/admin/logout", async (request, reply) => {
     const token = /wedding_session=([a-f0-9]{64})/.exec(request.headers.cookie ?? "")?.[1];
     if (token) db.prepare("DELETE FROM admin_sessions WHERE token_hash=?").run(hash(token));

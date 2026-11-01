@@ -85,6 +85,8 @@ test("admin filters and pagination work; single-event cards cannot enter the oth
 
 test("login fails closed, cross-site writes fail, sessions expire on logout", async (t) => {
   const app = await setup(); t.after(() => app.close());
+  assert.equal((await app.inject({ method: "POST", url: "/api/wedding/login", payload: { username: "wrong", password } })).statusCode, 401);
+  assert.equal((await app.inject({ method: "POST", url: "/api/wedding/login", payload: { password } })).statusCode, 401);
   assert.equal((await app.inject({ method: "POST", url: "/api/wedding/login", payload: { username: "organizer", password: "wrong" } })).statusCode, 401);
   const cookie = await login(app);
   assert.equal((await app.inject({ method: "POST", url: "/api/wedding/admin/logout", headers: { cookie, origin: "https://evil.example" } })).statusCode, 403);
@@ -93,6 +95,41 @@ test("login fails closed, cross-site writes fail, sessions expire on logout", as
   assert.equal((await app.inject({ url: "/api/wedding/admin/session", headers: { cookie } })).statusCode, 401);
   const closed = Fastify(); registerWedding(closed, { filename: ":memory:" }); t.after(() => closed.close());
   assert.equal((await closed.inject({ method: "POST", url: "/api/wedding/login", payload: { username: "admin", password } })).statusCode, 503);
+});
+
+test("preconfigured eight-character passwords work without account creation", async (t) => {
+  const app = Fastify();
+  registerWedding(app, { filename: ":memory:", adminName: "test-organizer", adminPassword: "Test1234" });
+  t.after(() => app.close());
+  const result = await app.inject({ method: "POST", url: "/api/wedding/login", payload: { username: "test-organizer", password: "Test1234" } });
+  assert.equal(result.statusCode, 200);
+  assert.deepEqual(result.json(), { ok: true });
+});
+
+test("20 operators on one network can log in and scan without ending other sessions", async (t) => {
+  const app = await setup(); t.after(() => app.close());
+  const guest = await reserve(app);
+  const cookies = await Promise.all(Array.from({ length: 20 }, () => login(app)));
+  assert.equal(new Set(cookies).size, 20);
+  const results = await Promise.all(cookies.map((cookie) => app.inject({
+    method: "POST", url: "/api/wedding/admin/checkins", headers: { cookie },
+    payload: { qr: `ASW:v1:${guest.token}:ceremony`, event: "ceremony" },
+  })));
+  assert.ok(results.every((response) => response.statusCode === 200));
+  assert.equal(results.filter((response) => !response.json().duplicate).length, 1);
+  assert.equal(results.filter((response) => response.json().duplicate).length, 19);
+  await app.inject({ method: "POST", url: "/api/wedding/admin/logout", headers: { cookie: cookies[0] } });
+  for (const cookie of cookies.slice(1)) {
+    assert.equal((await app.inject({ url: "/api/wedding/admin/session", headers: { cookie } })).statusCode, 200);
+  }
+});
+
+test("failed passwords are rate limited while successful sign-ins do not consume the allowance", async (t) => {
+  const app = await setup(); t.after(() => app.close());
+  for (let attempt = 0; attempt < 10; attempt++) {
+    assert.equal((await app.inject({ method: "POST", url: "/api/wedding/login", payload: { username: "organizer", password: "wrong" } })).statusCode, 401);
+  }
+  assert.equal((await app.inject({ method: "POST", url: "/api/wedding/login", payload: { username: "organizer", password } })).statusCode, 429);
 });
 
 test("wishes persist without duplicate retries and invalid messages are rejected", async (t) => {

@@ -1,14 +1,14 @@
 # Reservations and entrance check-in
 
-The invitation now saves reservations and wishes through the Fastify backend. The organizer console is `/admin` on the **invitation domain**, separate from the photo-booth admin on the booth domain. All guest-facing and admin UI text is English.
+The invitation saves reservations and wishes through the Fastify backend. The former booth app now serves the guest admin at its root and `/admin`; the photo-booth flow is no longer mounted. The invitation domain's `/admin` also opens the same console. All guest-facing and admin UI text is English.
 
 ## Local setup
 
 Use Node.js 24 or newer. Copy the relevant variables from `.env.example` into `apps/back/.env`, then set:
 
 ```dotenv
-WEDDING_ADMIN_USERNAME=admin
-WEDDING_ADMIN_PASSWORD=your-own-unique-password-at-least-12-characters
+WEDDING_ADMIN_USERNAME=your-admin-username
+WEDDING_ADMIN_PASSWORD=your-server-only-password
 ```
 
 Start both processes from the repository root:
@@ -16,9 +16,10 @@ Start both processes from the repository root:
 ```powershell
 npm run dev -w back
 npm run dev -w web
+npm run dev -w booth
 ```
 
-Vite forwards `/api` to `http://127.0.0.1:4000`. Open the web server's `/admin` URL and sign in with the configured credentials. No account or default password is created automatically. Camera scanning needs HTTPS or localhost; permission must be granted by the operator. Manual QR-content entry is available when a camera is unavailable.
+Vite forwards `/api` to `http://127.0.0.1:4000`. Open `http://localhost:5175/` for the dedicated admin and enter the preconfigured username and password; no account-registration flow is required. No default password is created automatically. Camera scanning needs HTTPS or localhost; permission must be granted by the operator. Manual QR-content entry is available when a camera is unavailable. In local development, personal invitation links point to the web app on port 5173.
 
 ### Try the form without a personal invitation
 
@@ -34,8 +35,8 @@ To run the same preview locally, use `npm run dev:demo -w web`, or `npm run buil
 
 ### Server-hosted site
 
-1. Add `WEDDING_ADMIN_USERNAME` and `WEDDING_ADMIN_PASSWORD` to the VPS environment file described in `.env.prod.example` before deploying.
-2. Use the existing VPS/Caddy deployment. Its invitation domain proxies `/api/wedding/*` to the backend. GitHub Pages runs the static demo described above; use the VPS domain for real reservations and admin.
+1. Add `WEDDING_ADMIN_USERNAME` and `WEDDING_ADMIN_PASSWORD` to the VPS environment file described in `.env.prod.example` before deploying. Both values stay on the backend; never put them in `VITE_*` variables.
+2. Use the existing VPS/Caddy deployment. Both the invitation and former booth domain proxy `/api/wedding/*` to the same backend. `https://<DOMAIN_BOOTH>/` now opens guest admin directly. Its `/invitation?invite=…` links redirect to the invitation domain while preserving the guest token. GitHub Pages runs the static demo described above; use the VPS domain for real reservations and admin.
 3. The backend stores SQLite in `/data/wedding.sqlite`, using the existing `booth_data` named volume. Do not remove that volume when updating containers. Local development defaults to `apps/back/data/wedding.sqlite`.
 4. Back up the database using SQLite's backup mechanism or stop the backend before copying the file. Do not copy only the main file from a running WAL database. Keep access-card links and backups private.
 
@@ -58,7 +59,7 @@ To run the same preview locally, use `npm run dev:demo -w web`, or `npm run buil
 
 **Guest List:** search name/reservation ID and filter by event, attendance, check-in status, and submission date. Results are paginated (30 per page). Submission-date filtering uses UTC; displayed timestamps use WITA. When an event filter is selected, check-in status is evaluated for that event. Without one, “Checked in” means at least one event was scanned. “Admissions across events” counts a party again if it attends both events; it is not a count of unique people. Click Search / Refresh to retrieve current data.
 
-Admin sessions are 12-hour HttpOnly cookies (Secure in production). Admin routes require a session, cross-site writes are blocked, login attempts are limited, and scan uniqueness is enforced in the database. Keep organizer credentials on the server, not in frontend environment variables or query strings.
+Admin sessions are independent 12-hour HttpOnly cookies (Secure in production), with no 10-user/session cap. Twenty operators on one network are covered by the API integration test, including simultaneous duplicate scans and logout isolation. Login throttling counts failed credentials only (10 failures per IP in 15 minutes); successful logins do not consume the allowance. All operators share the same guest database, and each guest/event can be admitted only once. Admin routes require a session and cross-site writes are blocked. Keep the credentials on the server, not in frontend environment variables or query strings. Actual camera hardware and server capacity still need checking at the venue.
 
 ## Verification
 

@@ -78,7 +78,7 @@ function ScanPanel({ event, onExpired }: { event: EventKey; onExpired: () => voi
   );
 }
 
-function InvitationManager({ onExpired }: { onExpired: () => void }) {
+function InvitationManager({ onExpired, invitationUrl }: { onExpired: () => void; invitationUrl?: string }) {
   const [entries, setEntries] = useState<PersonalInvitation[]>([]);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
@@ -93,7 +93,7 @@ function InvitationManager({ onExpired }: { onExpired: () => void }) {
     return () => { live = false; };
   }, [onExpired, refresh]);
   function link(token: string) {
-    const url = new URL(import.meta.env.BASE_URL, window.location.origin);
+    const url = new URL(invitationUrl ?? import.meta.env.BASE_URL, window.location.origin);
     url.searchParams.set("invite", token);
     return url.href;
   }
@@ -124,7 +124,7 @@ function InvitationManager({ onExpired }: { onExpired: () => void }) {
   </details>;
 }
 
-function GuestsPanel({ onExpired }: { onExpired: () => void }) {
+function GuestsPanel({ onExpired, invitationUrl }: { onExpired: () => void; invitationUrl?: string }) {
   const [search, setSearch] = useState("");
   const [query, setQuery] = useState("");
   const [event, setEvent] = useState("all");
@@ -149,7 +149,7 @@ function GuestsPanel({ onExpired }: { onExpired: () => void }) {
   function filter(set: (value: string) => void, value: string) { set(value); setPage(1); setLoading(true); }
   return <section className="admin-panel" aria-labelledby="guest-list-title">
     <h2 id="guest-list-title">Reservations & check-ins</h2>
-    <InvitationManager onExpired={onExpired} />
+    <InvitationManager invitationUrl={invitationUrl} onExpired={onExpired} />
     {data && <div className="admin-stats">
       <div><strong>{data.summary.reservations}</strong><span>Reservations</span></div>
       <div><strong>{data.summary.expectedGuests}</strong><span>Expected guests</span></div>
@@ -184,7 +184,7 @@ function GuestsPanel({ onExpired }: { onExpired: () => void }) {
   </section>;
 }
 
-export default function Admin() {
+export default function Admin({ invitationUrl }: { invitationUrl?: string }) {
   const [signedIn, setSignedIn] = useState(false);
   const [checking, setChecking] = useState(true);
   const [error, setError] = useState("");
@@ -210,7 +210,7 @@ export default function Admin() {
     </section> : <>
       <nav className="admin-tabs" aria-label="Admin sections"><button aria-pressed={tab === "scan"} onClick={() => setTab("scan")}>Scan QR</button><button aria-pressed={tab === "guests"} onClick={() => setTab("guests")}>Guest List</button></nav>
       {error && <p role="alert">{error}</p>}
-      {tab === "scan" ? <><label className="admin-entrance">Current entrance<select value={event} onChange={(e) => setEvent(e.target.value as EventKey)}><option value="ceremony">Holy Matrimony</option><option value="reception">Reception</option></select></label><ScanPanel key={event} event={event} onExpired={expired} /></> : <GuestsPanel onExpired={expired} />}
+      {tab === "scan" ? <><label className="admin-entrance">Current entrance<select value={event} onChange={(e) => setEvent(e.target.value as EventKey)}><option value="ceremony">Holy Matrimony</option><option value="reception">Reception</option></select></label><ScanPanel key={event} event={event} onExpired={expired} /></> : <GuestsPanel invitationUrl={invitationUrl} onExpired={expired} />}
     </>}
   </main>;
 }

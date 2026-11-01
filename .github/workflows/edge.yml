@@ -1,0 +1,42 @@
+name: VPS proxy CI/CD
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "deploy/Caddyfile"
+      - "deploy/test-update-service.sh"
+      - ".env.prod.example"
+      - "deploy/Dockerfile.edge"
+      - "docker-compose.prod.yml"
+      - "package.json"
+      - "package-lock.json"
+      - ".github/workflows/_component.yml"
+      - ".dockerignore"
+      - "deploy/update-service.sh"
+      - ".github/workflows/edge.yml"
+  pull_request:
+    paths:
+      - "deploy/Caddyfile"
+      - "deploy/test-update-service.sh"
+      - ".env.prod.example"
+      - "deploy/Dockerfile.edge"
+      - "docker-compose.prod.yml"
+      - "package.json"
+      - "package-lock.json"
+      - ".github/workflows/_component.yml"
+      - ".dockerignore"
+      - "deploy/update-service.sh"
+      - ".github/workflows/edge.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  pipeline:
+    uses: ./.github/workflows/_component.yml
+    with:
+      component: edge
+    secrets: inherit

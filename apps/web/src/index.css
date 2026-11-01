@@ -1341,7 +1341,9 @@ a {
 @media (prefers-reduced-motion: reduce) { .wish-entry { animation: none; } }
 
 /* Photo-topped, event-specific access cards. */
-.event-ticket.reservation-ticket { width: 75%; margin-inline: auto; padding: 0 0 1.5rem; overflow: hidden; background: #fffdf7; border: 1px solid var(--line); border-radius: 3px; box-shadow: 0 12px 30px rgba(43,51,59,.07); }
+.ticket-carousel-stage { display: grid; width: 82.5%; margin: 1rem auto 0; isolation: isolate; }
+.ticket-carousel-stage .event-ticket.reservation-ticket { grid-area: 1 / 1; width: 100%; margin: 0; align-self: stretch; padding: 0 0 1.5rem; overflow: hidden; background: #fffdf7; border: 1px solid var(--line); border-radius: 3px; box-shadow: 0 12px 30px rgba(43,51,59,.07); }
+.ticket-carousel-stage .event-ticket[data-active="false"] { visibility: hidden; pointer-events: none; }
 .ticket-photo-header { position: relative; isolation: isolate; text-align: left; color: #fffdf7; }
 .reservation-ticket .ticket-photo { width: 100%; height: auto; aspect-ratio: 4 / 3; object-fit: cover; object-position: center 30%; margin: 0; display: block; }
 .ticket-photo-header::after { content: ""; position: absolute; inset: 0; z-index: 0; background: linear-gradient(transparent 25%, rgba(24,30,36,.72)); }
@@ -1362,7 +1364,7 @@ a {
 .event-ticket .ticket-reference { margin: 1rem 1.2rem; }
 .event-ticket .card-note { padding: 0 1.2rem; font-size: .65rem; }
 .ticket-controls { gap: .7rem; }
-.ticket-controls [role="status"] { min-width: 0; flex: 1; max-width: 16rem; font-size: .7rem; letter-spacing: .03em; }
+.ticket-controls [role="status"] { min-width: 0; flex: 1; max-width: 16rem; min-height: 3.5em; display: grid; place-items: center; font-size: .7rem; letter-spacing: .03em; }
 .ticket-controls button { flex-shrink: 0; }
 @media (max-width: 340px) { .ticket-guest-row { grid-template-columns: 1fr; } .reservation-ticket .ticket-qr { margin-inline: auto; } .ticket-guest-details { text-align: center; } }
 

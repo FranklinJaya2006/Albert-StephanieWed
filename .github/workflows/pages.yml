@@ -1,7 +1,7 @@
 name: Deploy site to GitHub Pages
 
-# Builds only the guest-facing site (apps/web). The photo booth, API, n8n and WAHA are not static
-# and keep running on the VPS (see ci-cd.yml). Needs Settings > Pages > Source = "GitHub Actions".
+# Main invitation preview. Admin/API deploy separately to the VPS.
+# Needs Settings > Pages > Source = "GitHub Actions".
 on:
   push:
     branches: [main]
@@ -26,7 +26,7 @@ jobs:
         with:
           node-version: 24
           cache: npm
-      - run: npm ci
+      - run: npm ci -w web
       - name: Build
         run: npm run build -w web
         env:

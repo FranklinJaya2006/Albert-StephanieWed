@@ -1,14 +1,10 @@
-import { useState } from "react";
-import Admin from "./Admin";
-import Booth from "./Booth";
-import Welcome from "./Welcome";
+import Admin from "../../web/src/pages/Admin";
 
-function App() {
-  const [username, setUsername] = useState<string | null>(null);
-
-  if (window.location.pathname.startsWith("/admin")) return <Admin />;
-  if (!username) return <Welcome onStart={setUsername} />;
-  return <Booth username={username} onChangeName={() => setUsername(null)} />;
+export default function App() {
+  const invitationUrl = new URL("/invitation", window.location.origin);
+  if (import.meta.env.DEV) {
+    invitationUrl.port = "5173";
+    invitationUrl.pathname = "/";
+  }
+  return <Admin invitationUrl={invitationUrl.href} />;
 }
-
-export default App;

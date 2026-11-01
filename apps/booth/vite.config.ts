@@ -3,9 +3,11 @@ import { defineConfig } from 'vite'
 
 export default defineConfig({
   plugins: [react()],
+  resolve: { dedupe: ['react', 'react-dom'] },
   server: {
     port: 5175,
-    // The booth talks to apps/back for uploads; proxying avoids CORS in dev.
-    proxy: { '/api': 'http://localhost:4000' },
+    // Admin API stays on the same origin. Personal links open the invitation app.
+    host: true,
+    proxy: { '/api': 'http://127.0.0.1:4000' },
   },
 })

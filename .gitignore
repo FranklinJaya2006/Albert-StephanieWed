@@ -8,3 +8,8 @@ apps/back/data/
 *.sqlite-wal
 *.sqlite-shm
 .DS_Store
+
+# VPS component revision state (never credentials in Git)
+.image-tags.env
+.image-tags.*
+.deploy.lock
