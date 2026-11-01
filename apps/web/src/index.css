@@ -26,8 +26,8 @@
   --photo-tint: rgba(79, 93, 107, 0.22);
 
   /* Playfair Display italic is reserved for the couple's names; everything else is Montserrat. */
-  --names: "Playfair Display", Georgia, serif;
-  --sans: "Montserrat", "Segoe UI", system-ui, sans-serif;
+  --names: "Bodoni Moda", "Times New Roman", serif;
+  --sans: "EB Garamond", Georgia, serif;
 
   color-scheme: light;
   /* The page stops scrolling while the opening plays; keep the scrollbar's space so nothing jumps. */
@@ -609,6 +609,11 @@ a {
   width: min(13.5rem, 74%);
   aspect-ratio: 3 / 4;
   margin: 0.5rem auto 2.4rem;
+}
+
+.bride-frame .framed-photo {
+  background-size: auto 110%;
+  background-position: center bottom;
 }
 
 .person-name {
@@ -1295,3 +1300,128 @@ a {
 .music-toggle:focus-visible { outline: 2px solid var(--gold-deep); outline-offset: 3px; }
 /* Desktop: the invitation is the right-hand 45%, so the button sits at that column's bottom-left. */
 @media (min-width: 1024px) { .music-toggle { left: calc(55vw + 1rem); } }
+
+/* Manual photo carousel: a single generous portrait, no automatic playback. */
+.photo-carousel { width: 100%; min-width: 0; margin: 2rem auto; }
+.carousel-slide { padding: .6rem; }
+.carousel-photo { width: 100%; aspect-ratio: 2 / 3; animation: carousel-photo-in .5s ease both; }
+.carousel-controls { display: flex; align-items: center; justify-content: center; gap: 1.4rem; margin-top: 1.3rem; color: var(--slate-deep); }
+.carousel-controls button { display: grid; place-items: center; width: 48px; height: 48px; border: 1px solid var(--gold); border-radius: 50%; background: transparent; color: var(--slate-deep); font: inherit; font-size: 1.3rem; cursor: pointer; transition: background .2s, color .2s; }
+.carousel-controls button:hover:not(:disabled) { background: var(--slate-deep); color: var(--ivory); }
+.carousel-controls button:disabled { opacity: .3; cursor: default; }
+.carousel-controls button:focus-visible, .text-button:focus-visible { outline: 2px solid var(--slate-deep); outline-offset: 4px; }
+.carousel-controls [role="status"] { min-width: 4rem; font-size: .8rem; letter-spacing: .14em; text-align: center; }
+@keyframes carousel-photo-in { from { opacity: .35; } to { opacity: 1; } }
+.card-note { font-size: .7rem; color: var(--muted); margin: -.5rem auto 1.4rem; max-width: 26rem; }
+.guest-results { display: grid; gap: 1rem; margin-top: 1.5rem; text-align: left; }
+.guest-entry { padding: 1.2rem; border: 1px solid var(--line); border-radius: 6px; background: rgba(255,255,255,.5); overflow-wrap: anywhere; }
+.guest-entry h3 { font-family: var(--names); font-size: 1.2rem; margin-bottom: .4rem; color: var(--slate-deep); }
+.guest-entry p { white-space: pre-wrap; margin: .5rem 0 0; font-size: .88rem; line-height: 1.8; }
+.attendance-badge { display: inline-block; font-size: .72rem; color: var(--slate-deep); padding: .15rem .6rem; border: 1px solid var(--line); border-radius: 99px; }
+.text-button { margin-top: 1rem; padding: .5rem; min-height: 44px; background: transparent; border: 0; color: var(--slate-deep); font: inherit; font-size: .75rem; text-decoration: underline; text-underline-offset: 4px; cursor: pointer; }
+@media (prefers-reduced-motion: reduce) { .carousel-photo { animation: none; } .carousel-controls button { transition: none; } }
+
+/* Refined manual controls. Pointer clicks do not leave a focus ring. */
+.carousel-controls button { border-radius: 3px; -webkit-tap-highlight-color: transparent; }
+.carousel-controls button svg { width: 22px; height: 22px; stroke: currentColor; stroke-width: 1.5; stroke-linecap: square; stroke-linejoin: miter; }
+.carousel-controls button:focus:not(:focus-visible) { outline: none; box-shadow: none; }
+.carousel-controls button:focus-visible { outline: none; box-shadow: inset 0 -3px 0 var(--slate-deep); }
+@media (hover: hover) { .carousel-controls button:hover:not(:disabled) { background: var(--slate-deep); color: var(--ivory); } }
+.wish-entry { border: 1px solid rgba(184,151,95,.4); border-radius: 2px; padding: 1.5rem; background: #fffdf7; box-shadow: 0 6px 20px rgba(43,51,59,.04); animation: wish-arrive 1s cubic-bezier(.2,.65,.2,1) both; }
+.wish-entry h3 { padding-bottom: .8rem; margin-bottom: .8rem; border-bottom: 1px solid var(--line); font-style: normal; font-weight: 600; font-size: 1.45rem; }
+.wish-entry p { margin: 0; line-height: 1.9; }
+@keyframes wish-arrive { from { opacity: 0; transform: translateY(22px); } to { opacity: 1; transform: translateY(0); } }
+.reservation-ticket { text-align: center; padding: 1.5rem 1rem; margin-top: 1rem; border: 1px solid var(--line); background: #fffdf7; }
+.reservation-ticket h3 { font-family: var(--names); font-size: 1.7rem; margin: .6rem 0; }
+.reservation-ticket img { display: block; max-width: 100%; height: auto; margin: 0 auto; background: #fff; }
+.ticket-reference { font-size: .65rem; overflow-wrap: anywhere; margin: .7rem 0 1rem; }
+.reservation-ticket .card-note { margin: 1rem auto; }
+.reservation-ticket .button { display: inline-flex; align-items: center; justify-content: center; }
+.wish-form label, .carousel-controls { letter-spacing: .03em; }
+@media (prefers-reduced-motion: reduce) { .wish-entry { animation: none; } }
+
+/* Photo-topped, event-specific access cards. */
+.event-ticket.reservation-ticket { width: 75%; margin-inline: auto; padding: 0 0 1.5rem; overflow: hidden; background: #fffdf7; border: 1px solid var(--line); border-radius: 3px; box-shadow: 0 12px 30px rgba(43,51,59,.07); }
+.ticket-photo-header { position: relative; isolation: isolate; text-align: left; color: #fffdf7; }
+.reservation-ticket .ticket-photo { width: 100%; height: auto; aspect-ratio: 4 / 3; object-fit: cover; object-position: center 30%; margin: 0; display: block; }
+.ticket-photo-header::after { content: ""; position: absolute; inset: 0; z-index: 0; background: linear-gradient(transparent 25%, rgba(24,30,36,.72)); }
+.ticket-photo-caption { position: absolute; left: 1.3rem; right: 1.3rem; bottom: 1.2rem; z-index: 1; }
+.ticket-kicker { font-size: .65rem; letter-spacing: .15em; text-transform: uppercase; }
+.ticket-photo-caption h3 { color: inherit; font-size: clamp(1.8rem,4vw,2.5rem); line-height: 1.1; margin: .6rem 0; }
+.ticket-photo-caption p { font-size: .9rem; margin: 0; }
+.ticket-event-details { text-align: left; padding: 1.2rem 1.3rem; border-bottom: 1px solid var(--line); }
+.ticket-event-details h4, .ticket-guest-details h4 { font-family: var(--names); font-size: 1.35rem; line-height: 1.3; font-weight: 600; margin: 0 0 .4rem; }
+.ticket-event-details p { font-size: .75rem; line-height: 1.75; margin: .35rem 0; }
+.ticket-guest-row { display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1fr); gap: 1rem; padding: 1.2rem 1.3rem; align-items: center; }
+.reservation-ticket .ticket-qr { width: 100%; max-width: 220px; height: auto; margin: 0; border: 1px solid var(--line); border-radius: 5px; }
+.ticket-guest-details { text-align: left; overflow-wrap: anywhere; }
+.ticket-guest-details > span:not(.ticket-event-badge) { display: block; color: var(--muted); font-size: .68rem; margin: .5rem 0 .35rem; }
+.ticket-guest-details p { font-size: .85rem; margin: 0; }
+.ticket-event-badge { display: inline-block; margin-top: .7rem; font-size: .6rem; color: var(--slate-deep); border-bottom: 1px solid var(--gold); padding-bottom: .25rem; }
+.ticket-instruction { font-style: italic; font-size: .75rem; line-height: 1.8; padding: 0 1.2rem; }
+.event-ticket .ticket-reference { margin: 1rem 1.2rem; }
+.event-ticket .card-note { padding: 0 1.2rem; font-size: .65rem; }
+.ticket-controls { gap: .7rem; }
+.ticket-controls [role="status"] { min-width: 0; flex: 1; max-width: 16rem; font-size: .7rem; letter-spacing: .03em; }
+.ticket-controls button { flex-shrink: 0; }
+@media (max-width: 340px) { .ticket-guest-row { grid-template-columns: 1fr; } .reservation-ticket .ticket-qr { margin-inline: auto; } .ticket-guest-details { text-align: center; } }
+
+.access-download-instruction { margin: 1.5rem auto 1rem; max-width: 30rem; font-size: .95rem; line-height: 1.8; text-align: center; }
+.access-card-actions { display: flex; justify-content: center; flex-wrap: wrap; gap: .8rem; }
+.access-card-actions .button { display: inline-flex; align-items: center; justify-content: center; text-align: center; text-decoration: none; border-radius: 4px; }
+.access-card-actions .button:disabled { cursor: wait; opacity: .65; }
+#reservation-access-card { scroll-margin-top: 1rem; }
+
+
+/* Organizer console: independent of the guest invitation layout. */
+.wedding-admin { min-height: 100dvh; padding: clamp(1rem,3vw,2.5rem); background: #f3f5f7; color: #263443; font: 15px/1.6 system-ui, sans-serif; }
+.wedding-admin * { box-sizing: border-box; }
+.wedding-admin h1, .wedding-admin h2, .wedding-admin h3 { font-family: inherit; font-style: normal; color: inherit; }
+.wedding-admin h1 { font-size: clamp(1.5rem,3vw,2rem); }
+.wedding-admin h2 { font-size: 1.3rem; margin: 0 0 1rem; }
+.wedding-admin h3 { font-size: 1.1rem; margin: 0 0 .5rem; }
+.admin-header { max-width: 1280px; margin: 0 auto 1.5rem; display: flex; justify-content: space-between; gap: 1rem; align-items: center; }
+.admin-header p { letter-spacing: .16em; font-size: .7rem; color: #657384; }
+.wedding-admin button { padding: .7rem 1rem; min-height: 44px; border: 1px solid #c1cbd4; border-radius: 6px; background: #fff; color: #263443; font: inherit; cursor: pointer; }
+.wedding-admin button:hover:not(:disabled), .admin-tabs button[aria-pressed="true"] { color: #fff; background: #425b70; border-color: #425b70; }
+.wedding-admin button:disabled { opacity: .5; cursor: default; }
+.wedding-admin button:focus-visible, .wedding-admin input:focus-visible, .wedding-admin textarea:focus-visible, .wedding-admin select:focus-visible { outline: 2px solid #425b70; outline-offset: 3px; }
+.admin-panel { max-width: 1280px; margin: 1rem auto; padding: clamp(1rem,3vw,2rem); border: 1px solid #dbe2e8; border-radius: 12px; background: #fff; box-shadow: 0 6px 24px rgba(27,43,58,.04); }
+.admin-login { max-width: 460px; margin-top: 3rem; }
+.admin-form { display: grid; gap: 1rem; max-width: 560px; }
+.admin-form label, .admin-filters label, .admin-entrance { display: grid; gap: .4rem; font-size: .85rem; }
+.wedding-admin input, .wedding-admin textarea, .wedding-admin select { width: 100%; min-width: 0; padding: .7rem; border: 1px solid #bfcbd5; border-radius: 5px; background: #fff; color: #263443; font: inherit; }
+.admin-tabs { display: flex; gap: .6rem; max-width: 1280px; margin: 0 auto; }
+.admin-entrance { max-width: 1280px; margin: 1rem auto; }
+.admin-entrance select { max-width: 400px; }
+.admin-muted { color: #667482; font-size: .85rem; margin: .7rem 0; }
+.scanner-view { position: relative; width: min(100%,480px); aspect-ratio: 4 / 3; display: grid; place-items: center; border-radius: 8px; background: #172736; color: #c7d2db; overflow: hidden; margin: 1.2rem 0; }
+.scanner-view video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; visibility: hidden; }
+.scanner-active video { visibility: visible; }
+.admin-actions { display: flex; gap: 1rem; align-items: center; flex-wrap: wrap; margin: 1rem 0; }
+.admin-alert { padding: 1rem; margin: 1rem 0; border: 1px solid; border-radius: 6px; overflow-wrap: anywhere; }
+.admin-alert-error { background: #fff1f0; color: #8e2d25; border-color: #ecc2be; }
+.admin-alert-success { background: #eaf8f0; color: #236446; border-color: #abd5be; }
+.admin-alert-warning { background: #fff5da; color: #7b5518; border-color: #e6ce95; }
+.admin-stats { display: grid; grid-template-columns: repeat(auto-fit,minmax(140px,1fr)); gap: .8rem; margin: 1rem 0 1.5rem; }
+.admin-stats > div { padding: 1rem; border: 1px solid #dbe2e8; border-radius: 6px; background: #f7f9fb; }
+.admin-stats strong, .admin-stats span { display: block; }
+.admin-stats strong { font-size: 1.8rem; }
+.admin-stats span { color: #657384; font-size: .8rem; }
+.admin-filters { display: grid; grid-template-columns: repeat(auto-fit,minmax(160px,1fr)); gap: .8rem; align-items: end; }
+.admin-table-wrap { width: 100%; overflow-x: auto; margin-top: 1rem; }
+.wedding-admin table { width: 100%; border-collapse: collapse; text-align: left; min-width: 800px; font-size: .85rem; }
+.wedding-admin th, .wedding-admin td { border-bottom: 1px solid #e1e7ec; padding: .8rem; vertical-align: top; }
+.wedding-admin th { background: #f6f8fa; }
+.wedding-admin td small { display: block; color: #75818c; font-size: .65rem; overflow-wrap: anywhere; }
+.admin-checked { color: #23714c; }
+
+.admin-invitation-manager { padding: 1rem; margin: 1rem 0; border: 1px solid #dbe2e8; border-radius: 6px; }
+.admin-invitation-manager summary { cursor: pointer; font-weight: 600; min-height: 32px; }
+.admin-personal-links { display: grid; grid-template-columns: repeat(auto-fit,minmax(min(100%,280px),1fr)); gap: 1rem; margin-top: 1rem; max-height: 480px; overflow-y: auto; }
+.admin-personal-links article { padding: 1rem; border: 1px solid #dbe2e8; border-radius: 4px; }
+.admin-personal-links strong, .admin-personal-links span { display: block; }
+.admin-personal-links span { color: #667482; font-size: .8rem; }
+.admin-personal-links label { display: grid; gap: .3rem; margin-top: .7rem; font-size: .8rem; }
+.admin-personal-links a { font-size: .85rem; display: inline-block; padding: .5rem 0; }
+.reservation-link-notice { line-height: 1.8; max-width: 30rem; margin: 1.5rem auto; color: var(--slate-deep); }

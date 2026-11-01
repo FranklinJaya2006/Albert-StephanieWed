@@ -7,4 +7,5 @@ export default defineConfig({
   // else (dev, Docker/Caddy) it stays at the root.
   base: process.env.VITE_BASE ?? "/",
   plugins: [react()],
+  server: { proxy: { '/api': 'http://127.0.0.1:4000' } },
 })

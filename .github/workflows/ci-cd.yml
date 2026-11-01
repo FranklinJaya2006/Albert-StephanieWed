@@ -34,6 +34,7 @@ jobs:
       - run: npm run build -w web
       - run: npm run build -w booth
       - run: npm run build -w back
+      - run: npm test -w back
 
   images:
     needs: check

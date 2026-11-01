@@ -3,4 +3,8 @@ dist/
 .env
 *.log
 apps/back/uploads/
+apps/back/data/
+*.sqlite
+*.sqlite-wal
+*.sqlite-shm
 .DS_Store

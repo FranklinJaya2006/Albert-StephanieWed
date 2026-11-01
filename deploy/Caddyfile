@@ -19,8 +19,13 @@
 }
 
 {$DOMAIN_WEB} {
-	root * /srv/web
-	import spa
+	handle /api/wedding/* {
+		reverse_proxy back:4000
+	}
+	handle {
+		root * /srv/web
+		import spa
+	}
 }
 
 # The camera only works on https, which Caddy sets up for this domain automatically.

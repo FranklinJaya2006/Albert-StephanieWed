@@ -58,3 +58,7 @@ Stack di VPS (`docker-compose.prod.yml`): **edge** (Caddy, HTTPS otomatis: undan
   docker run --rm -v birdies-gift_n8n_data:/d -v "$PWD":/b alpine tar czf /b/n8n_data.tgz -C /d .
   ```
 - **Foto asli tidak ikut image**: hanya `*-web.jpg` di `apps/web/public` yang dipakai. Beri nama file asli `X.jpg` dan versi webnya `X-web.jpg`.
+# Wedding reservations and check-in
+
+The invitation includes a database-backed RSVP and wishes service plus an organizer console at `/admin`. Setup, credentials, QR behavior, backups, and deployment requirements are documented in [docs/guest-checkin.md](docs/guest-checkin.md).
+

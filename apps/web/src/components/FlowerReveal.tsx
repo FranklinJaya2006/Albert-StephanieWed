@@ -15,7 +15,7 @@ export default function FlowerReveal({ active, onCovered, onComplete }: { active
       className="flower-reveal"
       data-active={active ? "" : undefined}
       role="status"
-      aria-label="Membuka undangan"
+      aria-label="Opening invitation"
       onAnimationEnd={(event) => {
         // Animations of children and of the frame pseudo-elements bubble up here too.
         if (event.animationName === "reveal-bg-in" && (event.target as HTMLElement).classList.contains("flower-reveal-bg")) {
@@ -48,3 +48,4 @@ export default function FlowerReveal({ active, onCovered, onComplete }: { active
     </div>
   );
 }
+

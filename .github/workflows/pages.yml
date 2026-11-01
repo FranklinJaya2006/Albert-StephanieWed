@@ -32,6 +32,8 @@ jobs:
         env:
           # https://<user>.github.io/<repo>/ — the site lives in a subfolder.
           VITE_BASE: /${{ github.event.repository.name }}/
+          # Static preview: forms and access cards run locally without the live API.
+          VITE_DEMO_MODE: "true"
       - name: Drop full-size originals
         # Only the *-web files are used by the page; originals are tens of MB and would be public.
         run: find apps/web/dist -maxdepth 1 -type f \( -name '*.jpg' -o -name '*.png' \) ! -name '*-web.jpg' -delete

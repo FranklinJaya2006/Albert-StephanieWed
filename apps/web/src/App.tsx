@@ -6,22 +6,33 @@ import Rsvp from './pages/Rsvp'
 import MusicToggle from './components/MusicToggle'
 import FlowerReveal from './components/FlowerReveal'
 import { invitation } from './data/invitation'
+import { savedReservationToken } from './lib/weddingApi'
+import Admin from './pages/Admin'
 
-function App() {
-  const [opened, setOpened] = useState(false)
+function InvitationApp() {
+  const [returningToCard] = useState(() => {
+    const id = savedReservationToken()
+    return Boolean(id && /^[a-f0-9]{64}$/.test(id))
+  })
+  const [opened, setOpened] = useState(returningToCard)
   const [blooming, setBlooming] = useState(false)
-  const [finished, setFinished] = useState(false)
+  const [finished, setFinished] = useState(returningToCard)
   const audioRef = useRef<HTMLAudioElement>(null)
   const [playing, setPlaying] = useState(false)
   // The invitation is built (hidden) shortly after the cover appears, with its photos fetched, so
   // none of that work lands in the middle of the opening animation.
-  const [mounted, setMounted] = useState(false)
-  const [shown, setShown] = useState(false)
+  const [mounted, setMounted] = useState(returningToCard)
+  const [shown, setShown] = useState(returningToCard)
+  useEffect(() => {
+    if (!returningToCard) return
+    const frame = requestAnimationFrame(() => document.getElementById('reservation-access-card')?.scrollIntoView({ block: 'start', behavior: 'instant' }))
+    return () => cancelAnimationFrame(frame)
+  }, [returningToCard])
   useEffect(() => {
     const id = window.setTimeout(() => {
       setMounted(true)
-      const { groom, bride, loveStory, portraits } = invitation.photos
-      for (const src of [groom, bride, loveStory, ...portraits]) {
+      const { groom, bride, accessCard, portraits } = invitation.photos
+      for (const src of [groom, bride, accessCard, ...portraits]) {
         if (src) new Image().src = src
       }
     }, 300)
@@ -48,7 +59,7 @@ function App() {
   return (
     <BrowserRouter>
       <div className="invitation-layout">
-        <aside className="desktop-photo-panel" aria-label="Albert dan Stephanie">
+        <aside className="desktop-photo-panel" aria-label="Albert and Stephanie">
           <div className="desktop-photo-image" style={{ backgroundImage: `url(${invitation.photos.desktop})` }} aria-hidden="true" />
           <div className="desktop-photo-copy">
             <p className="desktop-photo-eyebrow">The Wedding of</p>
@@ -77,4 +88,8 @@ function App() {
     </BrowserRouter>
   )
 }
-export default App
+export default function App() {
+  const adminPath = `${import.meta.env.BASE_URL}admin`.replace(/\/$/, '')
+  return window.location.pathname.replace(/\/$/, '') === adminPath ? <Admin /> : <InvitationApp />
+}
+

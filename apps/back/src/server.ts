@@ -4,9 +4,17 @@ import { createReadStream } from "node:fs";
 import { access, mkdir, readFile, readdir, unlink, writeFile } from "node:fs/promises";
 import path from "node:path";
 import Fastify from "fastify";
+import { registerWedding } from "./wedding";
 
 // Booth photos arrive as base64 JPEG data URLs (~1–3 MB), above Fastify's 1 MB default.
 const app = Fastify({ logger: true, bodyLimit: 12 * 1024 * 1024 });
+registerWedding(app, {
+  filename: process.env.WEDDING_DB_PATH ?? path.resolve(__dirname, "../data/wedding.sqlite"),
+  adminPassword: process.env.WEDDING_ADMIN_PASSWORD,
+  adminName: process.env.WEDDING_ADMIN_USERNAME,
+  secureCookies: process.env.NODE_ENV === "production",
+  allowTestReservations: process.env.NODE_ENV === "test" && process.env.WEDDING_ALLOW_TEST_RESERVATIONS === "true",
+});
 
 app.get("/health", async () => ({ status: "ok" }));
 

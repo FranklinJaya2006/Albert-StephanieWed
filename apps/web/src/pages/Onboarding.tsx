@@ -22,7 +22,7 @@ function Onboarding({ onOpen, opened }: { onOpen: () => void; opened: boolean })
         <p className="cover-date">{dateLabel}</p>
         {/* Gone once pressed: the opening plays only once, so it must not look pressable again. */}
         {!opened && (
-          <button className="cover-next" type="button" aria-label="Buka undangan" onClick={onOpen}>
+          <button className="cover-next" type="button" aria-label="Open invitation" onClick={onOpen}>
             <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 4v16M5 13l7 7 7-7" /></svg>
           </button>
         )}
@@ -32,3 +32,4 @@ function Onboarding({ onOpen, opened }: { onOpen: () => void; opened: boolean })
 }
 
 export default Onboarding;
+

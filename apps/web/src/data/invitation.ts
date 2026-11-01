@@ -16,17 +16,17 @@ export const invitation = {
   coverNames: { groom: "Albert", bride: "Stephanie" },
   desktopMessage: "Marriage is the quiet promise to keep choosing each other — through every season, in every little moment, for a lifetime.",
   groom: {
-    name: "Albert Jaya",
+    name: "Albert Jaya. S.H., M.Kn",
     parentsLabel: "The Son of",
     father: "Mr. Rusli Jaya",
     mother: "Mrs. Vani Yap",
     instagram: "@albertjaya_",
   },
   bride: {
-    name: "Stephanie Likadinata",
+    name: "Stephanie Likadinata, B.Sc., M.Sc",
     parentsLabel: "The Daughter of",
     father: "Mr. Yusuf Likadinata",
-    mother: "Mrs. Ingrid K.",
+    mother: "Mrs. Ingrid Kongdoro",
     instagram: "@stephanielikaa",
   },
   quote: {
@@ -42,25 +42,25 @@ export const invitation = {
     label: "Holy Matrimony",
     date: "Saturday, 29 November 2026",
     time: "09.30 WITA",
-    venue: "Gereja Mawar Sharon",
+    venue: "Hotel The Rinra Maccora 2",
     address: "Jl. Metro Tj. Bunga No. 02, Makassar",
-    mapsQuery: "?q=GMS+Makassar+Barat",
+    mapsQuery: "?q=The+Rinra+Hotel+Makassar",
   },
   reception: {
     label: "Reception",
     date: "Saturday, 29 November 2026",
     time: "18.00 WITA",
-    venue: "New Bambuden (Bambuden III), 2th Floor",
+    venue: "New Bambuden (Bambuden III), 2nd Floor",
     address: "Jl. G. Latimojong No. 62, Makassar",
     mapsQuery: "?q=Bambuden+3+(New+Bambuden)",
   },
   photos: {
-    loveStory: asset("Portrait-web.jpg"),
+    accessCard: asset("Portrait-web.jpg"),
     desktop: asset("couple-cutout-web.jpg"),
     cover: asset("couple-cutout-web.jpg"),
     groom: asset("Groom-web.jpg"),
     bride: asset("Bride-web.jpg"),
-    // Foto vertikal (2:3), 4 foto: kiri-kanan, lalu baris berikutnya. "" = placeholder sampai file ada.
+    // Manual gallery. The former fourth photo is reserved for access cards.
     portraits: [asset("Gallery1-web.jpg"), asset("Gallery2-web.jpg"), asset("Gallery3-web.jpg"), asset("Gallery4-web.jpg")],
   },
 };

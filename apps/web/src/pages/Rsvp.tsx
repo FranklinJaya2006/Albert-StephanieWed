@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import Countdown from "../components/Countdown";
 import EventCard from "../components/EventCard";
@@ -6,14 +6,17 @@ import Florals from "../components/Florals";
 import Monogram from "../components/Monogram";
 import Ornament from "../components/Ornament";
 import FramedPhoto from "../components/FramedPhoto";
+import PhotoCarousel from "../components/PhotoCarousel";
+import ReservationQr from "../components/ReservationQr";
+import { weddingApi, savedReservationToken, newRequestKey, DEMO_MODE, RESERVATION_STORAGE_KEY, type Reservation, type Wish } from "../lib/weddingApi";
 import { invitation } from "../data/invitation";
 
 type Person = (typeof invitation)["groom"];
 
-function PersonCard({ person, photo }: { person: Person; photo: string }) {
+function PersonCard({ person, photo, photoClassName = "" }: { person: Person; photo: string; photoClassName?: string }) {
   return (
     <div className="person">
-      <FramedPhoto src={photo} label={person.name} className="person-frame" />
+      <FramedPhoto src={photo} label={person.name} className={`person-frame ${photoClassName}`} />
       <h3 className="person-name">{person.name}</h3>
       <p className="person-parents">
         {person.parentsLabel}
@@ -32,12 +35,42 @@ function PersonCard({ person, photo }: { person: Person; photo: string }) {
 }
 
 function Rsvp({ shown = true, ready = true }: { shown?: boolean; ready?: boolean }) {
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const guestName = searchParams.get("to");
-  const [reserved, setReserved] = useState(false);
+  const inviteToken = DEMO_MODE ? null : searchParams.get("invite");
+  const [invitationInfo, setInvitationInfo] = useState<{ name: string; maxGuests: number } | null>(null);
+  const [checkingInvitation, setCheckingInvitation] = useState(true);
+  const [allowUninvited, setAllowUninvited] = useState(false);
   const [attending, setAttending] = useState("yes");
   const [wished, setWished] = useState(false);
+  const [activeReservation, setActiveReservation] = useState<Reservation | null>(null);
+  const reserved = Boolean(activeReservation);
+  const [wishes, setWishes] = useState<Wish[]>([]);
+  const [reservationError, setReservationError] = useState("");
+  const [wishError, setWishError] = useState("");
+  const [savingReservation, setSavingReservation] = useState(false);
+  const [savingWish, setSavingWish] = useState(false);
+  const [token, setToken] = useState(savedReservationToken);
+  const [loadingCard, setLoadingCard] = useState(Boolean(token));
+  const reservationRequestKey = useRef<string | null>(null);
+  const wishRequestKey = useRef<string | null>(null);
   const { groom, bride, coverNames, initials, photos } = invitation;
+
+  useEffect(() => {
+    if (!shown) return;
+    let live = true;
+    weddingApi<Wish[]>("/wishes").then((entries) => { if (live) setWishes(entries); }).catch((error: Error) => { if (live) setWishError(error.message); });
+    weddingApi<{ allowUninvited: boolean }>("/reservation-options").then((options) => { if (live) setAllowUninvited(options.allowUninvited); }).catch((error: Error) => { if (live) setReservationError(error.message); }).finally(() => { if (live && !inviteToken) setCheckingInvitation(false); });
+    if (inviteToken) {
+      weddingApi<{ name: string; maxGuests: number; reservation: Reservation | null }>(`/invitations/${encodeURIComponent(inviteToken)}`).then((info) => {
+        if (!live) return;
+        setInvitationInfo(info);
+        if (info.reservation) setActiveReservation(info.reservation);
+      }).catch((error: Error) => { if (live) setReservationError(error.message); }).finally(() => { if (live) setCheckingInvitation(false); });
+    }
+    if (token) weddingApi<Reservation>(`/reservations/${encodeURIComponent(token)}`).then((entry) => { if (live) setActiveReservation(entry); }).catch((error: Error) => { if (live) setReservationError(error.message); }).finally(() => { if (live) setLoadingCard(false); });
+    return () => { live = false; };
+  }, [shown, token, inviteToken]);
 
   // Fade-up text blocks as they scroll into view. Uses a data attribute (not className) so
   // React re-renders never clobber the state. The blocks are marked hidden as soon as the page
@@ -51,6 +84,7 @@ function Rsvp({ shown = true, ready = true }: { shown?: boolean; ready?: boolean
       if (el.closest(".person") && !el.matches(".person")) return;
       if (el.closest(".event-card") && !el.matches(".event-card")) return;
       if (el.closest(".reservation-card")) return;
+      if (el.closest(".guest-results")) return;
       if (!el.dataset.reveal) el.dataset.reveal = "hidden";
     });
   }, [shown]);
@@ -79,7 +113,7 @@ function Rsvp({ shown = true, ready = true }: { shown?: boolean; ready?: boolean
         <Florals position="tl" />
         <Florals position="tr" />
         <p className="dear">Dear Mr/Mrs/Ms,</p>
-        <h2 className="guest-name">{guestName ?? "Our Honored Guest"}</h2>
+        <h2 className="guest-name">{invitationInfo?.name ?? guestName ?? "Our Honored Guest"}</h2>
         <Ornament />
         <p className="lead">
           By the grace of God and the blessings of our families, we cordially request the honour of
@@ -101,14 +135,7 @@ function Rsvp({ shown = true, ready = true }: { shown?: boolean; ready?: boolean
         <Florals position="br" />
         <PersonCard person={groom} photo={photos.groom} />
         <Ornament />
-        <PersonCard person={bride} photo={photos.bride} />
-      </section>
-
-      <section className="section love-story" aria-labelledby="love-story-title">
-        <Florals position="tr" />
-        <h2 className="section-title" id="love-story-title">Our Love Story</h2>
-        <FramedPhoto src={photos.loveStory} label="Our Love Story photo" className="love-story-photo" />
-        <p className="story">{invitation.story}</p>
+        <PersonCard person={bride} photo={photos.bride} photoClassName="bride-frame" />
       </section>
 
       <section className="section countdown-section" aria-labelledby="countdown-title">
@@ -137,19 +164,41 @@ function Rsvp({ shown = true, ready = true }: { shown?: boolean; ready?: boolean
         </p>
         <div className="reservation-card">
         <div className="reservation-details">
-        {reserved ? (
-          <p className="thank-you" role="status">Thank you for confirming your attendance!</p>
+        {loadingCard || checkingInvitation ? <p role="status">Loading your invitation…</p> : reserved ? (
+          <div>
+            <p className="thank-you" role="status">Thank you for confirming your attendance!</p>
+            {activeReservation && <ReservationQr key={activeReservation.id} reservation={activeReservation} />}
+          </div>
+        ) : !invitationInfo && !allowUninvited ? (
+          <p className="reservation-link-notice">Please open the personal invitation link sent by the organizer to confirm your attendance. Each invitation can be submitted only once.</p>
         ) : (
           <form
             className="wish-form"
-            onSubmit={(e) => {
+            onSubmit={async (e) => {
               e.preventDefault();
-              setReserved(true);
+              const data = new FormData(e.currentTarget);
+              const name = String(data.get("name") ?? "").trim();
+              if (!name) return;
+              if (savingReservation) return;
+              setSavingReservation(true); setReservationError("");
+              try {
+                reservationRequestKey.current ??= newRequestKey();
+                const entry = await weddingApi<Reservation>("/reservations", { method: "POST", body: JSON.stringify({
+                  requestKey: reservationRequestKey.current, name, attending, invitationToken: inviteToken ?? undefined,
+                  event: attending === "yes" ? String(data.get("event") ?? "both") : "",
+                  guests: attending === "yes" ? Number(data.get("guests") ?? 1) : 0,
+                }) });
+                setActiveReservation(entry);
+                try { localStorage.setItem(RESERVATION_STORAGE_KEY, entry.token); } catch { /* The card link also retains access. */ }
+                const url = new URL(window.location.href); url.searchParams.set("reservation", entry.token);
+                window.history.replaceState(null, "", url);
+              } catch (error) { setReservationError((error as Error).message); }
+              finally { setSavingReservation(false); }
             }}
           >
             <label>
               Your Name
-              <input name="name" defaultValue={guestName ?? ""} required />
+              <input name="name" defaultValue={invitationInfo?.name ?? guestName ?? ""} readOnly={Boolean(invitationInfo)} maxLength={120} required />
             </label>
             <label>
               Attendance
@@ -171,7 +220,7 @@ function Rsvp({ shown = true, ready = true }: { shown?: boolean; ready?: boolean
                 <label>
                   How many guests will be attending?
                   <select name="guests" defaultValue="1">
-                    {[1, 2, 3, 4, 5].map((n) => (
+                    {Array.from({ length: invitationInfo?.maxGuests ?? 5 }, (_, index) => index + 1).map((n) => (
                       <option key={n} value={n}>
                         {n} {n === 1 ? "person" : "people"}
                       </option>
@@ -180,13 +229,22 @@ function Rsvp({ shown = true, ready = true }: { shown?: boolean; ready?: boolean
                 </label>
               </>
             )}
-            <button type="submit" className="button">
-              Confirm
+            <button type="submit" className="button" disabled={savingReservation}>
+              {savingReservation ? "Saving…" : "Confirm"}
             </button>
           </form>
         )}
         </div>
         </div>
+        {reservationError && <p role="alert">{reservationError}</p>}
+        {reserved && allowUninvited && <button type="button" className="text-button" onClick={() => {
+          try { localStorage.removeItem(RESERVATION_STORAGE_KEY); } catch { /* Test again without local storage. */ }
+          const next = new URLSearchParams(searchParams);
+          next.delete("reservation"); next.delete("invite"); next.delete("event");
+          setSearchParams(next, { replace: true });
+          setActiveReservation(null); setToken(null); setInvitationInfo(null);
+          setLoadingCard(false); setReservationError(""); reservationRequestKey.current = null;
+        }}>Try another reservation</button>}
       </section>
 
       <section className="section portrait">
@@ -196,41 +254,55 @@ function Rsvp({ shown = true, ready = true }: { shown?: boolean; ready?: boolean
           {coverNames.groom} &amp; {coverNames.bride}
         </h2>
         <Ornament />
-        <div className="couple-photo-row">
-          {photos.portraits.map((src, index) => (
-            <FramedPhoto key={index} src={src} label={`Portrait of us ${index + 1}`} className="couple-row-photo" />
-          ))}
-        </div>
+        <PhotoCarousel photos={photos.portraits} />
         <p className="hashtag">{invitation.hashtag}</p>
       </section>
 
       <section className="section kind-words">
         <Florals position="bl" />
         <h2 className="section-title">Kind Words</h2>
+
         <p className="lead">Please leave your sincere prayer and wishes to us and our families:</p>
         {wished ? (
           <p className="thank-you">Thank you for your kind words and prayers!</p>
         ) : (
           <form
             className="wish-form"
-            onSubmit={(e) => {
+            onSubmit={async (e) => {
               e.preventDefault();
-              setWished(true);
+              const data = new FormData(e.currentTarget);
+              const name = String(data.get("name") ?? "").trim();
+              const message = String(data.get("message") ?? "").trim();
+              if (!name || !message) return;
+              if (savingWish) return;
+              setSavingWish(true); setWishError("");
+              try {
+                wishRequestKey.current ??= newRequestKey();
+                const entry = await weddingApi<Wish>("/wishes", { method: "POST", body: JSON.stringify({ name, message, requestKey: wishRequestKey.current }) });
+                setWishes((current) => [entry, ...current.filter((item) => item.id !== entry.id)].slice(0, 100));
+                setWished(true); wishRequestKey.current = null;
+              } catch (error) { setWishError((error as Error).message); }
+              finally { setSavingWish(false); }
             }}
           >
             <label>
               Your Name
-              <input name="name" defaultValue={guestName ?? ""} required />
+              <input name="name" defaultValue={guestName ?? ""} maxLength={120} required />
             </label>
             <label>
               Prayer &amp; Wishes
-              <textarea name="message" rows={4} required />
+              <textarea name="message" rows={4} maxLength={2000} required />
             </label>
-            <button type="submit" className="button">
-              Send Wishes
+            <button type="submit" className="button" disabled={savingWish}>
+              {savingWish ? "Sending…" : "Send Wishes"}
             </button>
           </form>
         )}
+        {wished && <button type="button" className="text-button" onClick={() => setWished(false)}>Write another wish</button>}
+        {wishError && <p role="alert">{wishError}</p>}
+        <div className="guest-results" aria-label="Guest wishes" aria-live="polite">
+          {wishes.map((entry) => <article className="guest-entry wish-entry" key={entry.id}><h3>{entry.name}</h3><p>{entry.message}</p></article>)}
+        </div>
       </section>
 
       <section className="closing">
@@ -239,7 +311,7 @@ function Rsvp({ shown = true, ready = true }: { shown?: boolean; ready?: boolean
             It will be a joy for us if you are able to attend our wedding day. Thank you for all the
             kind words, prayers, and attention given. See you on our wedding day!
           </p>
-          <p className="eyebrow">Our Sincere,</p>
+          <p className="eyebrow">With love,</p>
           <Ornament />
           <Monogram first={initials.first} second={initials.second} className="closing-monogram" />
           <h2 className="closing-names">
@@ -257,5 +329,8 @@ function Rsvp({ shown = true, ready = true }: { shown?: boolean; ready?: boolean
 }
 
 export default Rsvp;
+
+
+
 
 
