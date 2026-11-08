@@ -53,8 +53,8 @@ jobs:
           ACME_EMAIL: ci@example.test
           WEDDING_ADMIN_USERNAME: ci-user
           WEDDING_ADMIN_PASSWORD: ci-only-placeholder
-          N8N_ENCRYPTION_KEY: ci-only-placeholder
           WAHA_API_KEY: ci-only-placeholder
+          CLOUDFLARE_TUNNEL_TOKEN: ci-only-placeholder
         run: docker compose -f docker-compose.prod.yml config --quiet
       - name: Check deployment updater
         if: inputs.component == 'edge'
