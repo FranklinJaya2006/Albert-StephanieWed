@@ -42,17 +42,6 @@ services:
     volumes:
       - booth_data:/data
 
-  waha:
-    image: devlikeapro/waha:${WAHA_VERSION:-latest}
-    restart: unless-stopped
-    environment:
-      WAHA_API_KEY: ${WAHA_API_KEY:?set WAHA_API_KEY in .env}
-      WHATSAPP_API_KEY: ${WAHA_API_KEY}
-    ports:
-      - "127.0.0.1:3000:3000"
-    volumes:
-      - waha_data:/app/.sessions
-
   # Cloudflare Tunnel: carries the three public hostnames to the edge proxy. In the Cloudflare
   # dashboard (Zero Trust > Networks > Tunnels) add three Public Hostnames, each pointing to
   # HTTP  edge:80 : DOMAIN_WEB, DOMAIN_BOOTH and DOMAIN_N8N.
