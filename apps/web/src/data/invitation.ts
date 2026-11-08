@@ -18,15 +18,15 @@ export const invitation = {
   groom: {
     name: "Albert Jaya. S.H., M.Kn",
     parentsLabel: "The Son of",
-    father: "Mr. Rusli Jaya",
-    mother: "Mrs. Vani Yap",
+    father: "Tn. Rusli Jaya",
+    mother: "Ny. Vani Yap",
     instagram: "@albertjaya_",
   },
   bride: {
     name: "Stephanie Likadinata, B.Sc., M.Sc",
     parentsLabel: "The Daughter of",
-    father: "Mr. Yusuf Likadinata",
-    mother: "Mrs. Ingrid Kongdoro",
+    father: "Tn. Yusuf Likadinata",
+    mother: "Ny. Ingrid Kongdoro",
     instagram: "@stephanielikaa",
   },
   quote: {
@@ -42,9 +42,9 @@ export const invitation = {
     label: "Holy Matrimony ",
     date: "Saturday, 29 November 2026",
     time: "09.30 WITA",
-    venue: "Hotel The Rinra Maccora 2",
-    address: "Jl. Metro Tj. Bunga No. 02, Makassar",
-    mapsQuery: "?q=The+Rinra+Hotel+Makassar",
+    venue: "A. A Rifai Room, Hyatt Place Makassar",
+    address: "Jl. Jend. Sudirman No.31, Makassar",
+    mapsQuery: "?q=hyatt+place+makassar",
   },
   reception: {
     label: "Reception",
