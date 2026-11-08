@@ -44,7 +44,8 @@ apps/
                    couple can pick the best shot (username = who took it). Filters are in
                    src/filters.ts and drawn identically for live preview and saved photo.
                    Camera needs https (or localhost).
-n8n/workflows/     Exported n8n workflow JSON (added once message/file templates exist).
+n8n/workflows/     Exported n8n workflows (see n8n/README.md): `wedding-send-invitations.json` (Data Table -> WAHA, one personal link per guest) and
+                   `wedding-guest-api.json` (webhooks the site and admin desk call: invitation, RSVP, access card, wishes, QR check-in).
 deploy/            Dockerfile.back, Dockerfile.edge (builds web + booth, serves via Caddy), Caddyfile.
 docker-compose.yml        Local dev only: n8n + WAHA.
 docker-compose.prod.yml   VPS stack; values come from the server's .env (see .env.prod.example).
@@ -70,8 +71,13 @@ docker-compose.prod.yml   VPS stack; values come from the server's .env (see .en
 - Cover/desktop photo is `couple-cutout-web.jpg` (a plain portrait photo, not a cutout: sized `cover`, not mirrored).
 - Don't invent the message/invitation template — the user is providing a reference template
   for the "Yth. Bapak/Ibu ..." wording and file format. Ask before guessing its structure.
-- RSVP submission in `apps/web` doesn't persist anywhere yet (no backend endpoint). Don't
-  wire it to the DB without confirming what should be stored.
+- RSVPs, wishes and check-ins go from `apps/web` to the n8n **Guest API** webhooks (`VITE_N8N_WEBHOOK_BASE`; adapter in
+  `src/lib/weddingApi.ts`, which keeps the old REST-style paths so pages did not change). The guest list is the n8n Data Table
+  `wedding_guests`; the 64-hex `token` per row is both the personal link id and the QR secret (`ASW:v1:<token>:<event>`). All
+  guest rules live in the "Handle guest action" Code node. `apps/back/src/wedding.ts` (SQLite) is no longer called by the site.
+  Admin sign-in is an admin key (`X-Admin-Key`, n8n Header Auth), not a username/password.
+  The access card (on screen in `ReservationQr.tsx` and the downloaded PNG in `downloadAccessCard.ts`) shows `Pax` (Data Table `pax`, else the RSVP
+  count) and `Table` (`table_name`, hidden when empty); the admin scan result and guest list show them too. Keep both card renderings in step.
 - Design: mobile-first, 32rem column. Sizing is fluid: the root font-size is
   `clamp(15.5px, 4.1vw, 18px)` (desktop: `clamp(16px, 1.25vw, 20px)`) and everything else is in
   rem, so add new sizes in rem — not px — or they won't scale. Palette is slate blue `#708191` (main) / cream `#fbf3de`
@@ -82,8 +88,10 @@ docker-compose.prod.yml   VPS stack; values come from the server's .env (see .en
   The opening bloom runs ~7s (`--bloom-duration`); it closes only on its own
   `flower-reveal-exit` animation — pseudo-element animations fire animationend on it too. Fonts: Playfair Display Italic 400 only
   for the couple's names (monogram uses upright Playfair 400), Montserrat for everything else.
-  The monogram (`Monogram.tsx`) is letters + leaf sprig only, no background, colored `--ivory`. Ornaments and the monogram
-  are hand-made inline SVG — don't pull in external/Canva assets without the user supplying them.
+  The monogram (`Monogram.tsx`) is a transparent gold "A S" PNG (`src/assets/monogram-as.png`, cut out of a rendered logo; it lives under
+  `src/` so Vite bundles it: `public/*.png` is deleted from the Pages build). Ornaments are hand-made inline SVG — don't pull in
+  external/Canva assets without the user supplying them.
+  The opening plays on every visit, including for guests who already RSVPed; their data still loads from their link/token.
   Cards, countdown tiles and frames are plain rectangles (2–4px radius), no arches or cut corners. Every content photo (groom, bride,
   love story, the 4 gallery photos) uses one frame, `FramedPhoto` (`.photo-frame`/`.framed-photo`): 0.9rem corners, picture inset in
   a thin gold border with an outer hairline, and `PhotoBorderOrnament` on the bottom edge. Don't give any photo its own

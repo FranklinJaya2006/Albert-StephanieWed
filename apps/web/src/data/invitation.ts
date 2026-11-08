@@ -39,7 +39,7 @@ export const invitation = {
   // Local time — drives the countdown.
   eventDateTime: "2026-11-29T09:30:00+08:00",
   ceremony: {
-    label: "Holy Matrimony",
+    label: "Holy Matrimony ",
     date: "Saturday, 29 November 2026",
     time: "09.30 WITA",
     venue: "Hotel The Rinra Maccora 2",
@@ -61,7 +61,7 @@ export const invitation = {
     groom: asset("Groom-web.jpg"),
     bride: asset("Bride-web.jpg"),
     // Manual gallery. The former fourth photo is reserved for access cards.
-    portraits: [asset("Gallery1-web.jpg"), asset("Gallery2-web.jpg"), asset("Gallery3-web.jpg"), asset("Gallery4-web.jpg")],
+    portraits: [asset("Gallery1-web.jpg"), asset("Gallery2-web.jpg"), asset("Gallery3-web.jpg"), asset("Gallery4-web.jpg"), asset("Gallery5-web.jpg")],
   },
 };
 

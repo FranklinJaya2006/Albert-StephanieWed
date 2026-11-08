@@ -1,0 +1,894 @@
+{
+  "name": "Wedding - Guest API",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "## Wedding guest API (webhooks)\n\nThe invitation website and the admin desk call these two URLs (production: `https://<your-n8n>/webhook/wedding` and `/webhook/wedding-admin`). Every guest, RSVP and check-in lives in the **wedding_guests** Data Table; wishes in **wedding_wishes**.\n\n- **Public API** needs no key: a guest can only reach their own row with their personal token.\n- **Admin API** requires Header Auth: attach a credential with header name `X-Admin-Key` and a long random value. Give the same value to the admin desk.\n- Activate the workflow, then set the site's `VITE_N8N_WEBHOOK_BASE`.",
+        "width": 640,
+        "height": 330
+      },
+      "id": "56f6c017-0d3b-4d61-98b8-b5c7a594f29f",
+      "name": "Note 2",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -900,
+        -420
+      ]
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "wedding",
+        "responseMode": "responseNode",
+        "options": {
+          "allowedOrigins": "*"
+        }
+      },
+      "id": "6b078602-a4a9-4ad5-b898-91fc68adc8f5",
+      "name": "Public API",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -900,
+        40
+      ],
+      "webhookId": "856034de-8840-494f-99ff-8f678ef8e760"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "wedding-admin",
+        "authentication": "headerAuth",
+        "responseMode": "responseNode",
+        "options": {
+          "allowedOrigins": "*"
+        }
+      },
+      "id": "53707838-9380-42c6-ac3d-ec2eb676144f",
+      "name": "Admin API",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -900,
+        260
+      ],
+      "webhookId": "c500ca7b-6dd9-451f-bd7b-3974e970a957"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "// Marks the request as coming from the public webhook (no admin key was checked).\nconst request = $input.first().json;\nreturn [{ json: { scope: 'public', body: request.body ?? {} } }];\n"
+      },
+      "id": "52febbe3-fd52-48a9-895d-cbbc5809c544",
+      "name": "Tag public",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -680,
+        40
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "// Marks the request as admin. The admin webhook uses Header Auth, so n8n has already rejected\n// any request without the right X-Admin-Key before this node runs.\nconst request = $input.first().json;\nreturn [{ json: { scope: 'admin', body: request.body ?? {} } }];\n"
+      },
+      "id": "32c4d4c8-6da8-4b89-9bfd-136040b8671e",
+      "name": "Tag admin",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -680,
+        260
+      ]
+    },
+    {
+      "parameters": {
+        "action": "generate",
+        "encodingType": "hex",
+        "stringLength": 64,
+        "dataPropertyName": "token"
+      },
+      "id": "159faeac-29a5-4e50-a8c7-4b4814a9ba6d",
+      "name": "New token",
+      "type": "n8n-nodes-base.crypto",
+      "typeVersion": 2,
+      "position": [
+        -460,
+        150
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "expression",
+        "numberOutputs": 2,
+        "output": "={{ String($json.body.action ?? '').startsWith('wish') ? 1 : 0 }}"
+      },
+      "id": "25147feb-b635-40e0-9d54-248db21f3ede",
+      "name": "Which table?",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        -240,
+        150
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "row",
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "mode": "name",
+          "value": "wedding_guests"
+        },
+        "returnAll": true
+      },
+      "id": "0c76804c-e829-480e-9023-60ed740a60b5",
+      "name": "Get guests",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        -20,
+        40
+      ],
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "// Every guest-side rule of the invitation API lives here: invitation lookup, RSVP, access card,\n// admin guest list, and QR check-in. It returns { status, body, write }; `write` (if any) tells\n// the next nodes which Data Table row to save.\nconst request = $('New token').first().json;\nconst { scope, body } = request;\nconst newToken = request.token ?? request.data;\nconst rows = $input.all().map((item) => item.json).filter((row) => row && row.id !== undefined && row.token);\n\nconst HEX64 = /^[a-f0-9]{64}$/;\nconst now = new Date().toISOString();\nconst reply = (status, payload, write = null) => [{ json: { status, body: payload, write } }];\nconst fail = (status, message) => reply(status, { error: message });\nconst hasRsvp = (row) => row.rsvp_status === 'yes' || row.rsvp_status === 'no';\nconst reservation = (row) => ({\n  id: `R${row.id}`,\n  token: row.token,\n  name: row.name,\n  attending: row.rsvp_status,\n  event: row.rsvp_event || '',\n  guests: Number(row.rsvp_guests) || 0,\n  createdAt: row.rsvp_at,\n  pax: Number(row.pax) > 0 ? Number(row.pax) : null, // seats the organiser assigned (empty = use the RSVP count)\n  table: row.table_name || '',\n});\nconst byToken = (value) => (typeof value === 'string' && HEX64.test(value) ? rows.find((row) => row.token === value) : undefined);\n\nconst action = typeof body.action === 'string' ? body.action : '';\nconst ADMIN_ONLY = ['admin-check', 'admin-guests', 'admin-add-guest', 'admin-reservations', 'checkin'];\nif (ADMIN_ONLY.includes(action) && scope !== 'admin') return fail(403, 'Admin access required.');\n\nswitch (action) {\n  // ---- Public: the guest opens their personal link ----\n  case 'invitation': {\n    const guest = byToken(body.token);\n    if (!guest) return fail(404, 'Invitation not found. Please use the personal link sent by the organizer.');\n    return reply(200, {\n      name: guest.name,\n      maxGuests: Number(guest.max_guests) || 1,\n      reservation: hasRsvp(guest) ? reservation(guest) : null,\n    });\n  }\n\n  // ---- Public: the guest reopens their access card ----\n  case 'reservation': {\n    const guest = byToken(body.token);\n    if (!guest || !hasRsvp(guest)) return fail(404, 'Reservation not found. Please use your access card link.');\n    return reply(200, reservation(guest));\n  }\n\n  // ---- Public: the guest sends their RSVP (once per invitation) ----\n  case 'rsvp': {\n    const { attending, requestKey } = body;\n    if (!['yes', 'no'].includes(attending) || typeof requestKey !== 'string' || !/^[\\w-]{16,100}$/.test(requestKey)) {\n      return fail(400, 'Please enter a valid name and attendance.');\n    }\n    const guest = byToken(body.invitationToken);\n    if (!guest) return fail(403, 'Please use your personal invitation link to confirm your attendance.');\n    // One RSVP per invitation: reopening or resubmitting returns the original.\n    if (hasRsvp(guest)) return reply(200, reservation(guest));\n    const event = attending === 'yes' ? body.event : '';\n    const guests = attending === 'yes' ? body.guests : 0;\n    if (attending === 'yes' && (!['ceremony', 'reception', 'both'].includes(event) || !Number.isInteger(guests) || guests < 1 || guests > 5)) {\n      return fail(400, 'Choose an event and between 1 and 5 guests.');\n    }\n    const max = Number(guest.max_guests) || 1;\n    if (guests > max) return fail(400, `This invitation allows up to ${max} guests.`);\n    const columns = { rsvp_status: attending, rsvp_event: event, rsvp_guests: guests, rsvp_request_key: requestKey, rsvp_at: now };\n    return reply(201, reservation({ ...guest, ...columns }), { op: 'rsvp', id: guest.id, columns });\n  }\n\n  // ---- Admin ----\n  case 'admin-check':\n    return reply(200, { ok: true });\n\n  case 'admin-guests': {\n    const list = [...rows]\n      .sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt)) || Number(b.id) - Number(a.id))\n      .slice(0, 100)\n      .map((row) => ({\n        id: String(row.id),\n        token: row.token,\n        name: row.name,\n        maxGuests: Number(row.max_guests) || 1,\n        createdAt: row.createdAt,\n        reservationId: hasRsvp(row) ? `R${row.id}` : null,\n        phone: row.phone || '',\n        inviteSentAt: row.invite_sent_at || null,\n        pax: Number(row.pax) > 0 ? Number(row.pax) : null,\n        table: row.table_name || '',\n      }));\n    return reply(200, list);\n  }\n\n  case 'admin-add-guest': {\n    const name = typeof body.name === 'string' ? body.name.trim() : '';\n    const phone = typeof body.phone === 'string' ? body.phone.trim() : '';\n    const maxGuests = body.maxGuests;\n    const table = typeof body.table === 'string' ? body.table.trim() : '';\n    const pax = body.pax === undefined || body.pax === null || body.pax === '' ? null : body.pax;\n    if (!name || name.length > 120 || phone.length > 30 || !Number.isInteger(maxGuests) || maxGuests < 1 || maxGuests > 5) {\n      return fail(400, 'Enter a guest name and a party limit between 1 and 5.');\n    }\n    if (table.length > 60 || (pax !== null && (!Number.isInteger(pax) || pax < 1 || pax > 20))) {\n      return fail(400, 'Pax must be between 1 and 20, and the table name at most 60 characters.');\n    }\n    if (!HEX64.test(newToken ?? '')) return fail(500, 'Could not create a secure link. Please try again.');\n    const columns = {\n      name, phone, title: '', max_guests: maxGuests, pax: pax ?? 0, table_name: table, token: newToken, invite_sent_at: '',\n      rsvp_status: '', rsvp_event: '', rsvp_guests: 0, rsvp_request_key: '', rsvp_at: '',\n      ceremony_checkin_at: '', reception_checkin_at: '',\n    };\n    return reply(201, { id: '', token: newToken, name, maxGuests, createdAt: now, reservationId: null, pax, table }, { op: 'add', columns });\n  }\n\n  case 'admin-reservations': {\n    const search = typeof body.search === 'string' ? body.search.trim().toLowerCase() : '';\n    const event = body.event ?? 'all';\n    const attendance = body.attendance ?? 'all';\n    const status = body.status ?? 'all';\n    const date = body.date ?? '';\n    const page = Number(body.page ?? 1);\n    if (!Number.isInteger(page) || page < 1 || search.length > 120\n      || !['all', 'ceremony', 'reception'].includes(event)\n      || !['all', 'yes', 'no'].includes(attendance)\n      || !['all', 'checked-in', 'not-checked-in'].includes(status)\n      || (date && !/^\\d{4}-\\d{2}-\\d{2}$/.test(date))) {\n      return fail(400, 'Invalid filters.');\n    }\n    const answered = rows.filter(hasRsvp);\n    const scanned = (row, which) => (which === 'ceremony' ? row.ceremony_checkin_at : row.reception_checkin_at);\n    const matching = answered\n      .filter((row) => {\n        if (search && !String(row.name).toLowerCase().includes(search) && !`R${row.id}`.toLowerCase().includes(search)) return false;\n        if (event !== 'all' && row.rsvp_event !== event && row.rsvp_event !== 'both') return false;\n        if (attendance !== 'all' && row.rsvp_status !== attendance) return false;\n        if (date && String(row.rsvp_at).slice(0, 10) !== date) return false;\n        if (status !== 'all') {\n          const seen = event === 'all' ? Boolean(row.ceremony_checkin_at || row.reception_checkin_at) : Boolean(scanned(row, event));\n          if ((status === 'checked-in') !== seen) return false;\n        }\n        return true;\n      })\n      .sort((a, b) => String(b.rsvp_at).localeCompare(String(a.rsvp_at)) || Number(b.id) - Number(a.id));\n    const entries = matching.slice((page - 1) * 30, page * 30).map((row) => ({\n      id: `R${row.id}`,\n      name: row.name,\n      attending: row.rsvp_status,\n      event: row.rsvp_event || '',\n      guests: Number(row.rsvp_guests) || 0,\n      createdAt: row.rsvp_at,\n      ceremonyScannedAt: row.ceremony_checkin_at || null,\n      receptionScannedAt: row.reception_checkin_at || null,\n      pax: Number(row.pax) > 0 ? Number(row.pax) : null,\n      table: row.table_name || '',\n    }));\n    let checkedInCards = 0;\n    let admittedGuests = 0;\n    for (const row of answered) {\n      for (const which of ['ceremony', 'reception']) {\n        if (scanned(row, which)) { checkedInCards += 1; admittedGuests += Number(row.rsvp_guests) || 0; }\n      }\n    }\n    const expectedGuests = answered.reduce((sum, row) => sum + (row.rsvp_status === 'yes' ? Number(row.rsvp_guests) || 0 : 0), 0);\n    return reply(200, {\n      entries,\n      total: matching.length,\n      page,\n      pageSize: 30,\n      summary: { reservations: answered.length, expectedGuests, checkedInCards, admittedGuests },\n    });\n  }\n\n  // ---- Admin: the entrance scans a QR card ----\n  case 'checkin': {\n    const match = typeof body.qr === 'string' && /^ASW:v1:([a-f0-9]{64}):(ceremony|reception)$/.exec(body.qr.trim());\n    if (!match) return fail(400, 'Invalid QR code. Please use a newly issued entrance access card.');\n    const event = match[2];\n    if (body.event !== event) return fail(400, 'This card is for a different event. Select the correct entrance or ask for the other card.');\n    const guest = byToken(match[1]);\n    if (!guest || guest.rsvp_status !== 'yes' || (guest.rsvp_event !== 'both' && guest.rsvp_event !== event)) {\n      return fail(403, 'This access card is not valid for admission.');\n    }\n    const field = `${event}_checkin_at`;\n    const person = {\n      id: `R${guest.id}`,\n      name: guest.name,\n      guests: Number(guest.rsvp_guests) || 0,\n      pax: Number(guest.pax) > 0 ? Number(guest.pax) : null,\n      table: guest.table_name || '',\n    };\n    if (guest[field]) return reply(200, { duplicate: true, reservation: person, event, scannedAt: guest[field] });\n    const columns = {\n      ceremony_checkin_at: guest.ceremony_checkin_at || '',\n      reception_checkin_at: guest.reception_checkin_at || '',\n      [field]: now,\n    };\n    return reply(200, { duplicate: false, reservation: person, event, scannedAt: now }, { op: 'checkin', id: guest.id, columns });\n  }\n\n  default:\n    return fail(400, 'Unknown request.');\n}\n"
+      },
+      "id": "2dde417a-a6e0-4112-a2ec-0774ea9f13b4",
+      "name": "Handle guest action",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        200,
+        40
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "expression",
+        "numberOutputs": 4,
+        "output": "={{ ({ rsvp: 0, checkin: 1, add: 2 })[$json.write?.op] ?? 3 }}"
+      },
+      "id": "2519b2f4-1cbe-4310-b61d-0b68c10eb5c5",
+      "name": "Save route",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        420,
+        40
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "row",
+        "operation": "update",
+        "dataTableId": {
+          "__rl": true,
+          "mode": "name",
+          "value": "wedding_guests"
+        },
+        "matchType": "allConditions",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "id",
+              "condition": "eq",
+              "keyValue": "={{ $json.write.id }}"
+            }
+          ]
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "rsvp_status": "={{ $json.write.columns.rsvp_status }}",
+            "rsvp_event": "={{ $json.write.columns.rsvp_event }}",
+            "rsvp_guests": "={{ $json.write.columns.rsvp_guests }}",
+            "rsvp_request_key": "={{ $json.write.columns.rsvp_request_key }}",
+            "rsvp_at": "={{ $json.write.columns.rsvp_at }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "rsvp_status",
+              "displayName": "rsvp_status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "rsvp_event",
+              "displayName": "rsvp_event",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "rsvp_guests",
+              "displayName": "rsvp_guests",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "rsvp_request_key",
+              "displayName": "rsvp_request_key",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "rsvp_at",
+              "displayName": "rsvp_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "4698b82c-6509-40cd-b9a8-b1d8310177a3",
+      "name": "Save RSVP",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        660,
+        -120
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "row",
+        "operation": "update",
+        "dataTableId": {
+          "__rl": true,
+          "mode": "name",
+          "value": "wedding_guests"
+        },
+        "matchType": "allConditions",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "id",
+              "condition": "eq",
+              "keyValue": "={{ $json.write.id }}"
+            }
+          ]
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "ceremony_checkin_at": "={{ $json.write.columns.ceremony_checkin_at }}",
+            "reception_checkin_at": "={{ $json.write.columns.reception_checkin_at }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "ceremony_checkin_at",
+              "displayName": "ceremony_checkin_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "reception_checkin_at",
+              "displayName": "reception_checkin_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "9ce2184b-1bdf-4989-8be7-606a6f704092",
+      "name": "Save check-in",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        660,
+        20
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "row",
+        "operation": "insert",
+        "dataTableId": {
+          "__rl": true,
+          "mode": "name",
+          "value": "wedding_guests"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "name": "={{ $json.write.columns.name }}",
+            "phone": "={{ $json.write.columns.phone }}",
+            "title": "={{ $json.write.columns.title }}",
+            "max_guests": "={{ $json.write.columns.max_guests }}",
+            "pax": "={{ $json.write.columns.pax }}",
+            "table_name": "={{ $json.write.columns.table_name }}",
+            "token": "={{ $json.write.columns.token }}",
+            "invite_sent_at": "={{ $json.write.columns.invite_sent_at }}",
+            "rsvp_status": "={{ $json.write.columns.rsvp_status }}",
+            "rsvp_event": "={{ $json.write.columns.rsvp_event }}",
+            "rsvp_guests": "={{ $json.write.columns.rsvp_guests }}",
+            "rsvp_request_key": "={{ $json.write.columns.rsvp_request_key }}",
+            "rsvp_at": "={{ $json.write.columns.rsvp_at }}",
+            "ceremony_checkin_at": "={{ $json.write.columns.ceremony_checkin_at }}",
+            "reception_checkin_at": "={{ $json.write.columns.reception_checkin_at }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "name",
+              "displayName": "name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "phone",
+              "displayName": "phone",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "title",
+              "displayName": "title",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "max_guests",
+              "displayName": "max_guests",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "pax",
+              "displayName": "pax",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "table_name",
+              "displayName": "table_name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "token",
+              "displayName": "token",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "invite_sent_at",
+              "displayName": "invite_sent_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "rsvp_status",
+              "displayName": "rsvp_status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "rsvp_event",
+              "displayName": "rsvp_event",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "rsvp_guests",
+              "displayName": "rsvp_guests",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "rsvp_request_key",
+              "displayName": "rsvp_request_key",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "rsvp_at",
+              "displayName": "rsvp_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "ceremony_checkin_at",
+              "displayName": "ceremony_checkin_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "reception_checkin_at",
+              "displayName": "reception_checkin_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "1fd70a58-2997-46d7-9589-6c6f2745a7c0",
+      "name": "Add guest",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        660,
+        160
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "// After a Data Table write: send back the reply that \"Handle guest action\" prepared. A newly added\n// guest only gets its row id and creation time once it has been saved.\nconst plan = $('Handle guest action').first().json;\nconst saved = $input.first().json;\nconst body = { ...plan.body };\nif (plan.write && plan.write.op === 'add') {\n  body.id = String(saved.id);\n  body.createdAt = saved.createdAt ?? body.createdAt;\n}\nreturn [{ json: { status: plan.status, body } }];\n"
+      },
+      "id": "aeab1014-1d9b-4ec0-8694-2651577c62f2",
+      "name": "Finish guest write",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        900,
+        20
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "row",
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "mode": "name",
+          "value": "wedding_wishes"
+        },
+        "returnAll": false,
+        "limit": 100,
+        "orderBy": true,
+        "orderByColumn": "createdAt",
+        "orderByDirection": "DESC"
+      },
+      "id": "270d7fa5-a1ea-4d1b-95c5-6aeffe38ab7b",
+      "name": "Get wishes",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        -20,
+        420
+      ],
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "// Wishes (\"Kind Words\"): list the latest 100, or add one. A repeated request key returns the\n// wish that was already saved, so a double tap never posts twice.\nconst { body } = $('New token').first().json;\nconst rows = $input.all().map((item) => item.json).filter((row) => row && row.id !== undefined && row.name);\nconst now = new Date().toISOString();\nconst reply = (status, payload, write = null) => [{ json: { status, body: payload, write } }];\nconst fail = (status, message) => reply(status, { error: message });\nconst wish = (row) => ({ id: String(row.id), name: row.name, message: row.message, createdAt: row.createdAt });\n\nif (body.action === 'wishes-list') return reply(200, rows.map(wish));\n\nif (body.action === 'wish-add') {\n  const { name, message, requestKey } = body;\n  if (typeof name !== 'string' || !name.trim() || name.length > 120\n    || typeof message !== 'string' || !message.trim() || message.length > 2000\n    || typeof requestKey !== 'string' || !/^[\\w-]{16,100}$/.test(requestKey)) {\n    return fail(400, 'Please enter a name and a wish of up to 2,000 characters.');\n  }\n  const previous = rows.find((row) => row.request_key === requestKey);\n  if (previous) return reply(200, wish(previous));\n  const columns = { request_key: requestKey, name: name.trim(), message: message.trim() };\n  return reply(201, { id: '', name: columns.name, message: columns.message, createdAt: now }, { op: 'add', columns });\n}\n\nreturn fail(400, 'Unknown request.');\n"
+      },
+      "id": "09fba665-6887-437b-acaa-ca75b85f9c9f",
+      "name": "Handle wish action",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        200,
+        420
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "expression",
+        "numberOutputs": 2,
+        "output": "={{ $json.write ? 0 : 1 }}"
+      },
+      "id": "611ac133-3d61-4e1d-bd1a-af2b410c3032",
+      "name": "Wish route",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        420,
+        420
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "row",
+        "operation": "insert",
+        "dataTableId": {
+          "__rl": true,
+          "mode": "name",
+          "value": "wedding_wishes"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "request_key": "={{ $json.write.columns.request_key }}",
+            "name": "={{ $json.write.columns.name }}",
+            "message": "={{ $json.write.columns.message }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "request_key",
+              "displayName": "request_key",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "name",
+              "displayName": "name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "message",
+              "displayName": "message",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "f8a49a19-6dd5-4940-9685-1a6f99084430",
+      "name": "Add wish",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        660,
+        380
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "// After the wish is saved: reply with it, using the id and time the Data Table gave it.\nconst plan = $('Handle wish action').first().json;\nconst saved = $input.first().json;\nconst body = { ...plan.body, id: String(saved.id), createdAt: saved.createdAt ?? plan.body.createdAt };\nreturn [{ json: { status: plan.status, body } }];\n"
+      },
+      "id": "045aa044-3b7b-4ec9-a328-3e716f6fff37",
+      "name": "Finish wish",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        900,
+        380
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify($json.body) }}",
+        "options": {
+          "responseCode": "={{ $json.status }}"
+        }
+      },
+      "id": "82a0d59f-5268-4bb7-be7d-4e97db8b007d",
+      "name": "Respond",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        1140,
+        220
+      ]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Public API": {
+      "main": [
+        [
+          {
+            "node": "Tag public",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Admin API": {
+      "main": [
+        [
+          {
+            "node": "Tag admin",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Tag public": {
+      "main": [
+        [
+          {
+            "node": "New token",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Tag admin": {
+      "main": [
+        [
+          {
+            "node": "New token",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "New token": {
+      "main": [
+        [
+          {
+            "node": "Which table?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Which table?": {
+      "main": [
+        [
+          {
+            "node": "Get guests",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Get wishes",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get guests": {
+      "main": [
+        [
+          {
+            "node": "Handle guest action",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Handle guest action": {
+      "main": [
+        [
+          {
+            "node": "Save route",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save route": {
+      "main": [
+        [
+          {
+            "node": "Save RSVP",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Save check-in",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Add guest",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save RSVP": {
+      "main": [
+        [
+          {
+            "node": "Finish guest write",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save check-in": {
+      "main": [
+        [
+          {
+            "node": "Finish guest write",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Add guest": {
+      "main": [
+        [
+          {
+            "node": "Finish guest write",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Finish guest write": {
+      "main": [
+        [
+          {
+            "node": "Respond",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get wishes": {
+      "main": [
+        [
+          {
+            "node": "Handle wish action",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Handle wish action": {
+      "main": [
+        [
+          {
+            "node": "Wish route",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wish route": {
+      "main": [
+        [
+          {
+            "node": "Add wish",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Add wish": {
+      "main": [
+        [
+          {
+            "node": "Finish wish",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Finish wish": {
+      "main": [
+        [
+          {
+            "node": "Respond",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "435dfab9-d37b-4de0-b700-7b8e7d3bba59",
+  "meta": {
+    "templateCredsSetupCompleted": false
+  },
+  "tags": []
+}

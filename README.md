@@ -23,6 +23,8 @@ npm run dev -w back
 Admin di `http://localhost:5175/` meneruskan `/api` ke backend (port 4000) otomatis. Login memakai username `WEDDING_ADMIN_USERNAME` dan password `WEDDING_ADMIN_PASSWORD` yang ditentukan di backend. Lebih dari 10 petugas dapat login bersamaan; 20 sesi dan pemindaian bersamaan diuji melalui API. Kamera hanya jalan di `localhost` atau `https`.
 n8n + WAHA lokal (opsional): `docker compose up -d`.
 
+Workflow n8n JSON untuk menerima lalu meneruskan data: [n8n/README.md](n8n/README.md).
+
 ## Deploy ke VPS
 
 Alurnya: perubahan web → workflow **Invitation + API**, perubahan admin → **Admin + API**, perubahan proxy → **VPS proxy**. Masing-masing menjalankan pemeriksaan, build image, push ke GHCR dan update layanannya sendiri. Backend dipakai bersama dan ikut jalur web maupun admin. GitHub Pages tetap jalur utama preview undangan. Panduan bootstrap VPS, secret dan rollback: [docs/ci-cd.md](docs/ci-cd.md).

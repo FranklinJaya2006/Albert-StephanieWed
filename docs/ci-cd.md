@@ -7,7 +7,7 @@ The invitation remains the primary product. GitHub Pages continues to publish it
 | `pages.yml` | Invitation assets/source, root dependency files | Builds only `web`, publishes the existing GitHub Pages demo |
 | `web.yml` | Invitation, backend, shared dependencies | Checks invitation + backend, publishes `-web` and `-back`, updates web + API |
 | `admin.yml` | Admin, its imported invitation modules, backend, shared dependencies | Checks admin + backend, publishes `-admin` and `-back`, updates admin + API |
-| `edge.yml` | Routing, Compose, deployment updater, shared build/deploy files | Validates Compose and updater, publishes/restarts only HTTPS proxy |
+| `edge.yml` | Routing, Compose, n8n workflow exports, deployment updater, shared build/deploy files | Validates Compose, n8n JSON and updater, publishes/restarts only HTTPS proxy |
 | `_component.yml` | Reused by the three VPS workflows | Common checks, Docker cache, publishing and SSH deployment |
 
 All VPS workflows support **Run workflow**. Pull requests run checks and Docker builds without publishing or deploying. Pushes/dispatches on `main` publish commit-SHA and `latest` image tags. A backend change intentionally triggers both the web and admin checks, because they share that API. There is no separate backend workflow to manage.
@@ -67,3 +67,9 @@ For a manual rollback use the VPS script rather than rerunning an older Actions 
 ## Verification
 
 `bash deploy/test-update-service.sh` tests selected-service updates, web/admin shared API tags, preservation of other components, stale releases, rejected input and failed pulls using a mock Docker command. Compose can be validated without a running Docker engine using placeholder environment values. Actual image builds, Caddy image validation and a VPS rollout require Docker/a provisioned server.
+
+## n8n (guest list, RSVP, QR) on the VPS
+
+CI/CD ships the website, admin and proxy images; it does **not** import n8n workflows or create Data Tables. After the first bootstrap, do that once by hand following [`n8n/README.md`](../n8n/README.md) (create the owner account first, Data Tables, import both workflows from `n8n/workflows/`, attach the two Header Auth credentials, activate). Re-import a workflow whenever its JSON changes. `edge.yml` only checks that the exports are valid JSON.
+
+The frontends call n8n at the address in `apps/web/.env.production` (`VITE_N8N_WEBHOOK_BASE`, shared by the web and admin builds). Set it to `https://<DOMAIN_N8N>/webhook` and commit it before the first image build.

@@ -6,28 +6,18 @@ import Rsvp from './pages/Rsvp'
 import MusicToggle from './components/MusicToggle'
 import FlowerReveal from './components/FlowerReveal'
 import { invitation } from './data/invitation'
-import { savedReservationToken } from './lib/weddingApi'
 import Admin from './pages/Admin'
 
 function InvitationApp() {
-  const [returningToCard] = useState(() => {
-    const id = savedReservationToken()
-    return Boolean(id && /^[a-f0-9]{64}$/.test(id))
-  })
-  const [opened, setOpened] = useState(returningToCard)
+  const [opened, setOpened] = useState(false)
   const [blooming, setBlooming] = useState(false)
-  const [finished, setFinished] = useState(returningToCard)
+  const [finished, setFinished] = useState(false)
   const audioRef = useRef<HTMLAudioElement>(null)
   const [playing, setPlaying] = useState(false)
   // The invitation is built (hidden) shortly after the cover appears, with its photos fetched, so
   // none of that work lands in the middle of the opening animation.
-  const [mounted, setMounted] = useState(returningToCard)
-  const [shown, setShown] = useState(returningToCard)
-  useEffect(() => {
-    if (!returningToCard) return
-    const frame = requestAnimationFrame(() => document.getElementById('reservation-access-card')?.scrollIntoView({ block: 'start', behavior: 'instant' }))
-    return () => cancelAnimationFrame(frame)
-  }, [returningToCard])
+  const [mounted, setMounted] = useState(false)
+  const [shown, setShown] = useState(false)
   useEffect(() => {
     const id = window.setTimeout(() => {
       setMounted(true)

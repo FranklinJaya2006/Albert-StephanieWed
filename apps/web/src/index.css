@@ -164,34 +164,11 @@ a {
   filter: brightness(1.06) saturate(1.1) contrast(1.03);
 }
 
-/* Monogram */
+/* Monogram (a transparent PNG; see components/Monogram.tsx) */
 .monogram {
-  filter: drop-shadow(0 3px 6px rgba(33, 40, 48, 0.35));
-}
-
-.monogram-letter {
-  font-family: var(--names);
-  font-style: normal;
-  font-weight: 400;
-  fill: var(--ivory);
-}
-
-.monogram-first {
-  font-size: 132px;
-}
-
-.monogram-second {
-  font-size: 108px;
-}
-
-.seal-sprig {
-  fill: none;
-  stroke: var(--ivory);
-  stroke-width: 1;
-}
-
-.seal-sprig circle {
-  fill: var(--ivory);
+  display: block;
+  height: auto;
+  user-select: none;
 }
 
 /* Royal frame — a rectangular double border with baroque corner flourishes. */
@@ -945,21 +922,9 @@ a {
 
 
 .closing-monogram {
-  width: 5.5rem;
-  height: 5.5rem;
-  margin: 1rem auto 0.5rem;
-  display: block;
-  filter: none;
-}
-
-/* The monogram is cream by default (for the cover photo); on the paper it takes the slate. */
-.closing-monogram .monogram-letter,
-.closing-monogram .seal-sprig circle {
-  fill: var(--slate-deep);
-}
-
-.closing-monogram .seal-sprig {
-  stroke: var(--slate-deep);
+  width: auto;
+  height: 9rem;
+  margin: 1.5rem auto 1rem;
 }
 
 .closing-names {
@@ -1341,7 +1306,7 @@ a {
 @media (prefers-reduced-motion: reduce) { .wish-entry { animation: none; } }
 
 /* Photo-topped, event-specific access cards. */
-.ticket-carousel-stage { display: grid; width: 82.5%; margin: 1rem auto 0; isolation: isolate; }
+.ticket-carousel-stage { display: grid; width: 90.75%; margin: 1rem auto 0; isolation: isolate; }
 .ticket-carousel-stage .event-ticket.reservation-ticket { grid-area: 1 / 1; width: 100%; margin: 0; align-self: stretch; padding: 0 0 1.5rem; overflow: hidden; background: #fffdf7; border: 1px solid var(--line); border-radius: 3px; box-shadow: 0 12px 30px rgba(43,51,59,.07); }
 .ticket-carousel-stage .event-ticket[data-active="false"] { visibility: hidden; pointer-events: none; }
 .ticket-photo-header { position: relative; isolation: isolate; text-align: left; color: #fffdf7; }

@@ -30,6 +30,7 @@ export default function ReservationQr({ reservation }: { reservation: Reservatio
       {events.map((cardKey) => {
         const event = invitation[cardKey];
         const active = cardKey === eventKey;
+        const pax = reservation.pax ?? reservation.guests;
         return <article key={cardKey} className="reservation-ticket event-ticket" data-active={active} aria-hidden={!active} inert={!active} id={active ? "reservation-access-card" : undefined} aria-label={`${event.label} access card`}>
         <header className="ticket-photo-header">
           <img className="ticket-photo" src={invitation.photos.accessCard} alt="Albert and Stephanie" />
@@ -49,8 +50,9 @@ export default function ReservationQr({ reservation }: { reservation: Reservatio
           <div className="ticket-guest-details">
             <span>Reserved for</span>
             <h4>{reservation.name}</h4>
-            <span>Admission</span>
-            <p>{reservation.guests} {reservation.guests === 1 ? "guest" : "guests"}</p>
+            <span>Pax</span>
+            <p>{pax} pax</p>
+            {reservation.table && <><span>Table</span><p>{reservation.table}</p></>}
             <span className="ticket-event-badge">{event.label}</span>
           </div>
         </div>

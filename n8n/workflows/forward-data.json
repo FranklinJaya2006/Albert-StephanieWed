@@ -1,0 +1,92 @@
+{
+  "name": "Forward Incoming Data",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "forward-data",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "e750dcad-e6cd-4c4c-9ed8-6fbac250429e",
+      "name": "Receive Data",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -360,
+        0
+      ],
+      "webhookId": "6a88a688-ef99-4909-a259-8bd1f2b5f49c"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://example.invalid/replace-with-your-endpoint",
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json.body) }}",
+        "options": {
+          "timeout": 20000
+        }
+      },
+      "id": "a248935c-f14a-4af0-8788-18d1d8e97e3a",
+      "name": "Send Data",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -80,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\"ok\":true,\"forwarded\":true}",
+        "options": {}
+      },
+      "id": "67016746-8300-4eb5-9a1a-0400f8182924",
+      "name": "Confirm Forwarding",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        200,
+        0
+      ]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Receive Data": {
+      "main": [
+        [
+          {
+            "node": "Send Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Data": {
+      "main": [
+        [
+          {
+            "node": "Confirm Forwarding",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "0ea96ed5-f0bd-49fc-b65c-24d4d92a9b64",
+  "meta": {
+    "templateCredsSetupCompleted": false
+  },
+  "tags": []
+}

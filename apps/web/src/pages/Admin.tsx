@@ -3,10 +3,10 @@ import { ApiError, weddingApi } from "../lib/weddingApi";
 import { invitation } from "../data/invitation";
 
 type EventKey = "ceremony" | "reception";
-type ScanResult = { duplicate: boolean; event: EventKey; scannedAt: string; reservation: { id: string; name: string; guests: number } };
-type Guest = { id: string; name: string; attending: string; event: string; guests: number; createdAt: string; ceremonyScannedAt: string | null; receptionScannedAt: string | null };
+type ScanResult = { duplicate: boolean; event: EventKey; scannedAt: string; reservation: { id: string; name: string; guests: number; pax?: number | null; table?: string } };
+type Guest = { id: string; name: string; attending: string; event: string; guests: number; createdAt: string; ceremonyScannedAt: string | null; receptionScannedAt: string | null; pax?: number | null; table?: string };
 type GuestList = { entries: Guest[]; total: number; page: number; pageSize: number; summary: { reservations: number; expectedGuests: number; checkedInCards: number; admittedGuests: number } };
-type PersonalInvitation = { id: string; token: string; name: string; maxGuests: number; createdAt: string; reservationId?: string | null };
+type PersonalInvitation = { id: string; token: string; name: string; maxGuests: number; createdAt: string; reservationId?: string | null; phone?: string; inviteSentAt?: string | null; pax?: number | null; table?: string };
 const dateTime = (value: string) => new Intl.DateTimeFormat("en-GB", { dateStyle: "medium", timeStyle: "short", timeZone: "Asia/Makassar" }).format(new Date(value));
 
 function ScanPanel({ event, onExpired }: { event: EventKey; onExpired: () => void }) {
@@ -70,6 +70,7 @@ function ScanPanel({ event, onExpired }: { event: EventKey; onExpired: () => voi
       {result && <div className={`admin-alert ${result.duplicate ? "admin-alert-warning" : "admin-alert-success"}`} role="status">
         <h3>{result.duplicate ? "Already checked in — do not admit again" : "Check-in confirmed"}</h3>
         <p>{result.reservation.name} · {result.reservation.guests} {result.reservation.guests === 1 ? "guest" : "guests"}</p>
+        {(result.reservation.table || result.reservation.pax) && <p><strong>{result.reservation.table ? `Table: ${result.reservation.table}` : ""}{result.reservation.table && result.reservation.pax ? " · " : ""}{result.reservation.pax ? `${result.reservation.pax} pax` : ""}</strong></p>}
         <p>{invitation[result.event].label} · {dateTime(result.scannedAt)}</p>
         <small>ID: {result.reservation.id}</small>
       </div>}
@@ -104,19 +105,22 @@ function InvitationManager({ onExpired, invitationUrl }: { onExpired: () => void
       event.preventDefault(); if (busy) return;
       const form = event.currentTarget, input = new FormData(form); setBusy(true); setError("");
       try {
-        const entry = await weddingApi<PersonalInvitation>("/admin/invitations", { method: "POST", body: JSON.stringify({ name: String(input.get("name") ?? "").trim(), maxGuests: Number(input.get("maxGuests")) }) });
+        const entry = await weddingApi<PersonalInvitation>("/admin/invitations", { method: "POST", body: JSON.stringify({ name: String(input.get("name") ?? "").trim(), maxGuests: Number(input.get("maxGuests")), phone: String(input.get("phone") ?? "").trim(), table: String(input.get("table") ?? "").trim(), pax: input.get("pax") ? Number(input.get("pax")) : undefined }) });
         setEntries((current) => [entry, ...current].slice(0, 100)); form.reset();
       } catch (error) { setError((error as Error).message); }
       finally { setBusy(false); }
     }}>
       <label>Guest / family name<input name="name" maxLength={120} required /></label>
+      <label>WhatsApp number (optional)<input name="phone" inputMode="tel" maxLength={30} placeholder="08…" /></label>
+      <label>Pax (optional)<input name="pax" type="number" min={1} max={20} inputMode="numeric" /></label>
+      <label>Table name (optional)<input name="table" maxLength={60} /></label>
       <label>Maximum party size<select name="maxGuests" defaultValue="2">{[1,2,3,4,5].map((value) => <option key={value} value={value}>{value}</option>)}</select></label>
       <button disabled={busy}>{busy ? "Creating…" : "Create invitation"}</button>
       <button type="button" onClick={() => setRefresh((value) => value + 1)}>Refresh links</button>
     </form>
     {error && <p role="alert">{error}</p>}
     <div className="admin-personal-links">{entries.map((entry) => <article key={entry.id}>
-      <strong>{entry.name}</strong><span>{entry.maxGuests} maximum · {entry.reservationId ? "RSVP submitted" : "Awaiting RSVP"}</span>
+      <strong>{entry.name}</strong><span>{entry.maxGuests} maximum · {entry.reservationId ? "RSVP submitted" : "Awaiting RSVP"}{entry.inviteSentAt ? " · Invite sent" : ""}{entry.table ? ` · ${entry.table}` : ""}{entry.pax ? ` · ${entry.pax} pax` : ""}</span>
       <label>Personal link<input value={link(entry.token)} readOnly onFocus={(event) => event.target.select()} /></label>
       <a href={link(entry.token)} target="_blank" rel="noreferrer">Open invitation ↗</a>
     </article>)}</div>
@@ -169,10 +173,10 @@ function GuestsPanel({ onExpired, invitationUrl }: { onExpired: () => void; invi
     {!loading && data && <>
       <p className="admin-muted">{data.total} matching reservations · timestamps shown in WITA</p>
       <div className="admin-table-wrap"><table>
-        <thead><tr><th>Guest</th><th>RSVP</th><th>Party</th><th>Holy Matrimony</th><th>Reception</th><th>Submitted</th></tr></thead>
+        <thead><tr><th>Guest</th><th>RSVP</th><th>Party</th><th>Table</th><th>Holy Matrimony</th><th>Reception</th><th>Submitted</th></tr></thead>
         <tbody>{data.entries.map((entry) => <tr key={entry.id}>
           <td><strong>{entry.name}</strong><small>{entry.id}</small></td>
-          <td>{entry.attending === "yes" ? "Attending" : "Declined"}</td><td>{entry.guests}</td>
+          <td>{entry.attending === "yes" ? "Attending" : "Declined"}</td><td>{entry.guests}{entry.pax ? ` / ${entry.pax} pax` : ""}</td><td>{entry.table || "—"}</td>
           <td>{entry.ceremonyScannedAt ? <span className="admin-checked">✓ {dateTime(entry.ceremonyScannedAt)}</span> : ["both", "ceremony"].includes(entry.event) ? "Not checked in" : "—"}</td>
           <td>{entry.receptionScannedAt ? <span className="admin-checked">✓ {dateTime(entry.receptionScannedAt)}</span> : ["both", "reception"].includes(entry.event) ? "Not checked in" : "—"}</td>
           <td>{dateTime(entry.createdAt)}</td>
@@ -200,12 +204,12 @@ export default function Admin({ invitationUrl }: { invitationUrl?: string }) {
   return <main className="wedding-admin">
     <header className="admin-header"><div><p>ALBERT & STEPHANIE</p><h1>Guest reception desk</h1></div>{signedIn && <button onClick={async () => { try { await weddingApi("/admin/logout", { method: "POST" }); setSignedIn(false); } catch (e) { setError((e as Error).message); } }}>Sign out</button>}</header>
     {checking ? <p role="status">Checking your session…</p> : !signedIn ? <section className="admin-login admin-panel">
-      <h2>Organizer sign-in</h2><p>Sign in to scan access cards and manage the guest list.</p>
+      <h2>Organizer sign-in</h2><p>Enter the admin key to scan access cards and manage the guest list.</p>
       <form className="admin-form" onSubmit={async (e) => {
         e.preventDefault(); if (busy) return; const form = new FormData(e.currentTarget); setBusy(true); setError("");
-        try { await weddingApi("/login", { method: "POST", body: JSON.stringify({ username: form.get("username"), password: form.get("password") }) }); setSignedIn(true); }
+        try { await weddingApi("/login", { method: "POST", body: JSON.stringify({ key: form.get("key") }) }); setSignedIn(true); }
         catch (error) { setError((error as Error).message); } finally { setBusy(false); }
-      }}><label>Username<input name="username" autoComplete="username" maxLength={120} required /></label><label>Password<input name="password" type="password" autoComplete="current-password" maxLength={256} required /></label><button disabled={busy}>{busy ? "Signing in…" : "Sign in"}</button></form>
+      }}><label>Admin key<input name="key" type="password" autoComplete="current-password" maxLength={256} required /></label><button disabled={busy}>{busy ? "Signing in…" : "Sign in"}</button></form>
       {error && <p className="admin-alert admin-alert-error" role="alert">{error}</p>}
     </section> : <>
       <nav className="admin-tabs" aria-label="Admin sections"><button aria-pressed={tab === "scan"} onClick={() => setTab("scan")}>Scan QR</button><button aria-pressed={tab === "guests"} onClick={() => setTab("guests")}>Guest List</button></nav>

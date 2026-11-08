@@ -1,3 +1,5 @@
+> **Note:** the website and admin desk now talk to the n8n **Guest API** webhooks, with guests in an n8n Data Table, instead of the Fastify/SQLite backend described below. See [`n8n/README.md`](../n8n/README.md). The sections below describe the previous backend and the guest/admin flow, which is unchanged apart from admin sign-in now using an admin key.
+
 # Reservations and entrance check-in
 
 The invitation saves reservations and wishes through the Fastify backend. The former booth app now serves the guest admin at its root and `/admin`; the photo-booth flow is no longer mounted. The invitation domain's `/admin` also opens the same console. All guest-facing and admin UI text is English.

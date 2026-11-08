@@ -5,6 +5,8 @@
 **/dist
 **/.env
 **/.env.*
+# Public webhook address the frontends are built with (no secrets in it): keep it in the build.
+!apps/web/.env.production
 apps/back/uploads
 
 # Photo originals: the app only references the *-web.jpg versions, so don't ship the full-size

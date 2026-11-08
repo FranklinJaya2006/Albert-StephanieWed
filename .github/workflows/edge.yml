@@ -6,6 +6,8 @@ on:
     paths:
       - "deploy/Caddyfile"
       - "deploy/test-update-service.sh"
+      - "n8n/workflows/**"
+      - "n8n/README.md"
       - ".env.prod.example"
       - "deploy/Dockerfile.edge"
       - "docker-compose.prod.yml"
@@ -19,6 +21,8 @@ on:
     paths:
       - "deploy/Caddyfile"
       - "deploy/test-update-service.sh"
+      - "n8n/workflows/**"
+      - "n8n/README.md"
       - ".env.prod.example"
       - "deploy/Dockerfile.edge"
       - "docker-compose.prod.yml"
