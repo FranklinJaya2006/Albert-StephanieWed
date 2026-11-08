@@ -4,10 +4,8 @@ services:
   edge:
     image: ${IMAGE_PREFIX:?set IMAGE_PREFIX in .env}-edge:${EDGE_IMAGE_TAG:-${IMAGE_TAG:-latest}}
     restart: unless-stopped
-    ports:
-      - "80:80"
-      - "443:443"
-      - "443:443/udp"
+    # No published ports: traffic arrives through the Cloudflare Tunnel (service cloudflared below),
+    # which reaches this container at http://edge:80. HTTPS is terminated by Cloudflare.
     environment:
       DOMAIN_WEB: ${DOMAIN_WEB:?set DOMAIN_WEB in .env}
       DOMAIN_BOOTH: ${DOMAIN_BOOTH:?set DOMAIN_BOOTH in .env}
@@ -54,6 +52,18 @@ services:
       - "127.0.0.1:3000:3000"
     volumes:
       - waha_data:/app/.sessions
+
+  # Cloudflare Tunnel: carries the three public hostnames to the edge proxy. In the Cloudflare
+  # dashboard (Zero Trust > Networks > Tunnels) add three Public Hostnames, each pointing to
+  # HTTP  edge:80 : DOMAIN_WEB, DOMAIN_BOOTH and DOMAIN_N8N.
+  cloudflared:
+    image: cloudflare/cloudflared:${CLOUDFLARED_VERSION:-latest}
+    restart: unless-stopped
+    command: tunnel --no-autoupdate run
+    environment:
+      TUNNEL_TOKEN: ${CLOUDFLARE_TUNNEL_TOKEN:?set CLOUDFLARE_TUNNEL_TOKEN in .env}
+    depends_on:
+      - edge
 
 volumes:
   caddy_data:

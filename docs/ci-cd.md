@@ -21,7 +21,7 @@ Leave repository variable `DEPLOY_ENABLED` unset or `false`. GitHub Pages and CI
 ## First VPS setup
 
 1. Install Docker Engine with the Compose plugin, Bash and `flock` (normally provided by util-linux on Ubuntu). Allow ports 80/443 and point invitation/admin/n8n DNS records to the VPS.
-2. Create `/opt/birdies-gift` owned by the deploy user. Copy `docker-compose.prod.yml` and `deploy/update-service.sh` there. Copy `.env.prod.example` as `/opt/birdies-gift/.env` and fill the server-side values, including `WEDDING_ADMIN_USERNAME` and `WEDDING_ADMIN_PASSWORD`. Local `apps/back/.env` is deliberately never uploaded by CI.
+2. Create the deploy folder, e.g. `/opt/birdies-gift` or `~/ASWed`, owned by the deploy user. If it is not `/opt/birdies-gift`, set repository **Variable** `DEPLOY_PATH` to its path (a relative path such as `ASWed` is taken from the deploy user's home). Copy `docker-compose.prod.yml` and `deploy/update-service.sh` there. Copy `.env.prod.example` as `/opt/birdies-gift/.env` and fill the server-side values, including `WEDDING_ADMIN_USERNAME` and `WEDDING_ADMIN_PASSWORD`. Local `apps/back/.env` is deliberately never uploaded by CI.
 3. Run the web, admin and proxy workflows on `main` to publish all four images. Ensure `IMAGE_PREFIX` in the server `.env` is the lowercase `ghcr.io/<owner>/<repository>`.
 4. If GHCR packages are private, sign in to GHCR on the VPS with a read-packages credential for the initial pull. Keep this credential out of Git.
 5. Bootstrap the entire stack once on the VPS:

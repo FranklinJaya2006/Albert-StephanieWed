@@ -17,7 +17,8 @@
 	reverse_proxy {args[0]}
 }
 
-{$DOMAIN_WEB} {
+# Plain HTTP on purpose: Cloudflare terminates HTTPS and the tunnel talks to this proxy over http://edge:80.
+http://{$DOMAIN_WEB} {
 	handle /api/wedding/* {
 		reverse_proxy back:4000
 	}
@@ -27,7 +28,7 @@
 }
 
 # The former booth domain now serves guest admin. HTTPS enables camera scanning.
-{$DOMAIN_BOOTH} {
+http://{$DOMAIN_BOOTH} {
 	handle /invitation {
 		redir https://{$DOMAIN_WEB}/?{query} 302
 	}
@@ -39,6 +40,6 @@
 	}
 }
 
-{$DOMAIN_N8N} {
+http://{$DOMAIN_N8N} {
 	reverse_proxy n8n:5678
 }
