@@ -18,15 +18,15 @@ export const invitation = {
   groom: {
     name: "Albert Jaya. S.H., M.Kn",
     parentsLabel: "The Son of",
-    father: "Tn. Rusli Jaya",
-    mother: "Ny. Vani Yap",
+    father: "Mr. Rusli Jaya",
+    mother: "Mrs. Vani Yap",
     instagram: "@albertjaya_",
   },
   bride: {
     name: "Stephanie Likadinata, B.Sc., M.Sc",
     parentsLabel: "The Daughter of",
-    father: "Tn. Yusuf Likadinata",
-    mother: "Ny. Ingrid Kongdoro",
+    father: "Mr. Yusuf Likadinata",
+    mother: "Mrs. Ingrid Kongdoro",
     instagram: "@stephanielikaa",
   },
   quote: {
