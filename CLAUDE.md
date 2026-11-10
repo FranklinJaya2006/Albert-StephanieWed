@@ -33,7 +33,7 @@ apps/
                    reference template the user supplied):
                    - "/"     Cover — photo, A&T monogram, "Let's Begin"
                    - "/rsvp" Invitation — "Dear Mr/Mrs/Ms {?to=}", groom & bride, countdown,
-                             event cards, Reservation form (name, attendance; if attending: event + guest count), portrait +
+                             event cards, Reservation form (name, attendance; if attending: guest count; the wedding is the Reception only, so there is no event question), portrait +
                              4 gallery photos in an even 2×2 grid (`portraits` in data; "" = placeholder), Kind Words form (name + wishes), closing.
                              Corner flower accents come from components/Florals.tsx.
                    - "/gallery" All gallery photos ("View More" from /rsvp), keeps ?to=
@@ -80,6 +80,8 @@ docker-compose.prod.yml   VPS stack; values come from the server's .env (see .en
   Admin sign-in is an admin key (`X-Admin-Key`, n8n Header Auth), not a username/password.
   The access card (on screen in `ReservationQr.tsx` and the downloaded PNG in `downloadAccessCard.ts`) shows `Pax` (Data Table `pax`, else the RSVP
   count) and `Table` (`table_name`, hidden when empty); the admin scan result and guest list show them too. Keep both card renderings in step.
+  The invitation is for the **Reception only**: the site shows one event card, the RSVP always sends `reception`, the access card and the admin scanner
+  handle only the reception. The `ceremony` data in `invitation.ts` and the API's `ceremony`/`both` event values are still there but unused.
 - Design: mobile-first, 32rem column. Sizing is fluid: the root font-size is
   `clamp(15.5px, 4.1vw, 18px)` (desktop: `clamp(16px, 1.25vw, 20px)`) and everything else is in
   rem, so add new sizes in rem — not px — or they won't scale. Palette is slate blue `#708191` (main) / cream `#fbf3de`

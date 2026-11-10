@@ -6,21 +6,20 @@ import { DEMO_MODE } from "../lib/weddingApi";
 import { downloadAccessCard } from "./downloadAccessCard";
 
 export default function ReservationQr({ reservation }: { reservation: Reservation }) {
-  const [current, setCurrent] = useState(() => reservation.event === "both" && new URLSearchParams(window.location.search).get("event") === "reception" ? 1 : 0);
+  const [current, setCurrent] = useState(0);
   const [downloading, setDownloading] = useState(false);
   const [downloadError, setDownloadError] = useState("");
-  const events = reservation.event === "both" ? ["ceremony", "reception"] as const
-    : [reservation.event === "ceremony" ? "ceremony" : "reception"] as const;
+  const events = ["reception"] as const; // the invitation is for the reception only
   const eventKey = events[Math.min(current, events.length - 1)];
   const event = invitation[eventKey];
   const images = useMemo(() => {
-    function create(event: "ceremony" | "reception") {
+    function create(event: "reception") {
       const qr = qrcode(0, "M");
       qr.addData(`ASW:${DEMO_MODE ? "demo" : "v1"}:${reservation.token}:${event}`);
       qr.make();
       return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(qr.createSvgTag(5, 20))}`;
     }
-    return { ceremony: create("ceremony"), reception: create("reception") };
+    return { reception: create("reception") };
   }, [reservation.token]);
   const image = images[eventKey];
   if (reservation.attending !== "yes") return null;

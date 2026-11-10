@@ -149,7 +149,6 @@ function Rsvp({ shown = true, ready = true }: { shown?: boolean; ready?: boolean
         <h2 className="section-title" id="events-title">When &amp; Where</h2>
         <Ornament />
         <div className="events">
-          <EventCard {...invitation.ceremony} />
           <EventCard {...invitation.reception} />
         </div>
       </section>
@@ -185,7 +184,7 @@ function Rsvp({ shown = true, ready = true }: { shown?: boolean; ready?: boolean
                 reservationRequestKey.current ??= newRequestKey();
                 const entry = await weddingApi<Reservation>("/reservations", { method: "POST", body: JSON.stringify({
                   requestKey: reservationRequestKey.current, name, attending, invitationToken: inviteToken ?? undefined,
-                  event: attending === "yes" ? String(data.get("event") ?? "both") : "",
+                  event: attending === "yes" ? "reception" : "",
                   guests: attending === "yes" ? Number(data.get("guests") ?? 1) : 0,
                 }) });
                 setActiveReservation(entry);
@@ -209,14 +208,6 @@ function Rsvp({ shown = true, ready = true }: { shown?: boolean; ready?: boolean
             </label>
             {attending === "yes" && (
               <>
-                <label>
-                  Which event will you attend?
-                  <select name="event" defaultValue="both">
-                    <option value="both">Both events</option>
-                    <option value="ceremony">{invitation.ceremony.label}</option>
-                    <option value="reception">{invitation.reception.label}</option>
-                  </select>
-                </label>
                 <label>
                   How many guests will be attending?
                   <select name="guests" defaultValue="1">

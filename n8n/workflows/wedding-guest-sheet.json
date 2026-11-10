@@ -7,7 +7,7 @@
         "width": 700,
         "height": 380
       },
-      "id": "f4d58cb0-ac1d-4f80-bb08-90537c20c550",
+      "id": "8c4b8bfc-2652-4c63-8e6c-d508e27613b4",
       "name": "Note 3",
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
@@ -18,7 +18,7 @@
     },
     {
       "parameters": {},
-      "id": "4883c3f4-bee7-4087-9500-f22272d69d73",
+      "id": "b0c85e49-2406-4aeb-8141-5fe7db6fada2",
       "name": "Sync guest sheet",
       "type": "n8n-nodes-base.manualTrigger",
       "typeVersion": 1,
@@ -32,7 +32,7 @@
         "mode": "runOnceForAllItems",
         "jsCode": "// Edit siteUrl: where the invitation website is published. Each guest's link is <siteUrl>/AlbertStephanie/<token>.\nreturn [{ json: { siteUrl: 'https://invitation.loventra.dpdns.org' } }];\n"
       },
-      "id": "bc5a67f3-54be-46e5-8270-37448ff54e80",
+      "id": "bbeb8fe8-9d70-4d54-ae78-7c38b7c84df8",
       "name": "Settings",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -61,7 +61,7 @@
         },
         "options": {}
       },
-      "id": "a89c11b1-8d7b-4c4a-b418-5443841720bb",
+      "id": "e21f9dbc-d387-47c0-bd65-7e7608bfaa06",
       "name": "Read guest sheet",
       "type": "n8n-nodes-base.googleSheets",
       "typeVersion": 4.7,
@@ -81,7 +81,7 @@
         },
         "returnAll": true
       },
-      "id": "755f7d43-6081-4a0b-898d-dee1baad116b",
+      "id": "42fd9bd4-267b-4b21-b94d-9944e91397f8",
       "name": "Get guests",
       "type": "n8n-nodes-base.dataTable",
       "typeVersion": 1.1,
@@ -96,7 +96,7 @@
         "mode": "runOnceForAllItems",
         "jsCode": "// Compares the Google Sheet with the wedding_guests Data Table.\n// The sheet owns name, guests, pax and table; the Data Table owns RSVP and check-in. A row with no token is a\n// new guest (a token is made for it next); a token the table already knows is an update; a token the table\n// does not know yet (for example the fixed test tokens) creates that guest with exactly that token.\nconst HEX64 = /^[a-f0-9]{64}$/;\nconst sheetRows = $('Read guest sheet').all().map((item) => item.json);\nconst known = new Set($input.all().map((item) => item.json).filter((row) => row && row.id !== undefined && row.token).map((row) => row.token));\nconst seen = new Set();\nconst out = [];\nfor (const row of sheetRows) {\n  const name = String(row.name ?? '').trim();\n  if (!name) continue; // empty line in the sheet\n  const guests = Math.floor(Number(row.guests));\n  const pax = Math.floor(Number(row.pax));\n  const base = {\n    row_number: row.row_number,\n    name,\n    max_guests: guests > 0 ? guests : 1,\n    pax: pax > 0 ? pax : 0,\n    table_name: String(row.table ?? '').trim(),\n  };\n  const raw = String(row.token ?? '').trim().toLowerCase();\n  if (raw && !HEX64.test(raw)) { out.push({ json: { ...base, op: 'bad', reason: 'invalid', rawToken: String(row.token).trim() } }); continue; }\n  if (raw && seen.has(raw)) { out.push({ json: { ...base, op: 'bad', reason: 'duplicate', rawToken: raw } }); continue; }\n  if (raw) seen.add(raw);\n  out.push({ json: { ...base, op: raw && known.has(raw) ? 'update' : 'create', existingToken: raw } });\n}\nreturn out;\n"
       },
-      "id": "2b6027f3-1f52-4a30-9ff7-732d982348ea",
+      "id": "d7cbc449-f43d-4dd9-bfa5-aa3e079e7797",
       "name": "Plan sync",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -112,7 +112,7 @@
         "stringLength": 64,
         "dataPropertyName": "token"
       },
-      "id": "c39d4549-c0c8-4246-b200-9a3b049d85cf",
+      "id": "e8bc7325-50b3-4058-b3c0-a2ed78750c76",
       "name": "New token",
       "type": "n8n-nodes-base.crypto",
       "typeVersion": 2,
@@ -126,7 +126,7 @@
         "mode": "runOnceForAllItems",
         "jsCode": "// Every item already has a freshly generated token. Keep the sheet's own token when it has one.\nconst blank = {\n  phone: '', title: '', invite_sent_at: '', rsvp_status: '', rsvp_event: '', rsvp_guests: 0,\n  rsvp_request_key: '', rsvp_at: '', ceremony_checkin_at: '', reception_checkin_at: '',\n};\nreturn $input.all().map(({ json: row }) => ({\n  json: row.op === 'bad' ? row : { ...blank, ...row, token: row.existingToken || row.token },\n}));\n"
       },
-      "id": "fa710d6f-6b6b-4b37-9389-565da07e130b",
+      "id": "fa70c867-6526-4a87-887b-9d7eec040b14",
       "name": "Resolve",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -141,7 +141,7 @@
         "numberOutputs": 3,
         "output": "={{ ({ create: 0, update: 1 })[$json.op] ?? 2 }}"
       },
-      "id": "957bd598-859b-408a-a145-0e7ff26d8a61",
+      "id": "067bf81d-c98f-499f-86f3-e600f98ad218",
       "name": "Sync route",
       "type": "n8n-nodes-base.switch",
       "typeVersion": 3.2,
@@ -319,7 +319,7 @@
         },
         "options": {}
       },
-      "id": "4b9ddd68-d3d3-4549-9280-0a320fa5b556",
+      "id": "fe1bd276-23c8-414f-bee9-42504530a462",
       "name": "Create guest",
       "type": "n8n-nodes-base.dataTable",
       "typeVersion": 1.1,
@@ -397,7 +397,7 @@
         },
         "options": {}
       },
-      "id": "ccd7eb22-ab53-4597-9d7f-a34486dce862",
+      "id": "5b0b49f7-d571-4829-a5ef-621b1d88aad4",
       "name": "Update guest",
       "type": "n8n-nodes-base.dataTable",
       "typeVersion": 1.1,
@@ -409,9 +409,9 @@
     {
       "parameters": {
         "mode": "runOnceForAllItems",
-        "jsCode": "// What goes back into the sheet for each row: its token, its personal link and where the guest stands.\nconst siteUrl = String($('Settings').first().json.siteUrl).replace(/\\/+$/, '');\nconst plan = $('Resolve').all().map((item) => item.json);\nconst statusOf = (row) => {\n  const parts = [];\n  if (row.rsvp_status === 'yes') parts.push(`Hadir${row.rsvp_event ? ` (${row.rsvp_event})` : ''}, ${Number(row.rsvp_guests) || 0} orang`);\n  else if (row.rsvp_status === 'no') parts.push('Tidak hadir');\n  else parts.push('Belum RSVP');\n  if (row.ceremony_checkin_at) parts.push('sudah check-in pemberkatan');\n  if (row.reception_checkin_at) parts.push('sudah check-in resepsi');\n  return parts.join(' · ');\n};\nconst out = [];\nfor (const { json: row } of $input.all()) {\n  if (row.op === 'bad') {\n    const why = row.reason === 'duplicate' ? 'Token dobel: kosongkan sel token' : 'Token tidak valid: kosongkan sel token';\n    out.push({ json: { row_number: row.row_number, token: row.rawToken, link: '', status: why } });\n    continue;\n  }\n  const planned = plan.find((item) => item.op !== 'bad' && item.token === row.token);\n  if (!planned) continue;\n  out.push({ json: { row_number: planned.row_number, token: row.token, link: `${siteUrl}/AlbertStephanie/${row.token}`, status: statusOf(row) } });\n}\nreturn out;\n"
+        "jsCode": "// What goes back into the sheet for each row: its token, its personal link and where the guest stands.\nconst siteUrl = String($('Settings').first().json.siteUrl).replace(/\\/+$/, '');\nconst plan = $('Resolve').all().map((item) => item.json);\nconst statusOf = (row) => {\n  const parts = [];\n  if (row.rsvp_status === 'yes') parts.push(`Hadir, ${Number(row.rsvp_guests) || 0} orang`);\n  else if (row.rsvp_status === 'no') parts.push('Tidak hadir');\n  else parts.push('Belum RSVP');\n  if (row.reception_checkin_at) parts.push('sudah check-in');\n  return parts.join(' · ');\n};\nconst out = [];\nfor (const { json: row } of $input.all()) {\n  if (row.op === 'bad') {\n    const why = row.reason === 'duplicate' ? 'Token dobel: kosongkan sel token' : 'Token tidak valid: kosongkan sel token';\n    out.push({ json: { row_number: row.row_number, token: row.rawToken, link: '', status: why } });\n    continue;\n  }\n  const planned = plan.find((item) => item.op !== 'bad' && item.token === row.token);\n  if (!planned) continue;\n  out.push({ json: { row_number: planned.row_number, token: row.token, link: `${siteUrl}/AlbertStephanie/${row.token}`, status: statusOf(row) } });\n}\nreturn out;\n"
       },
-      "id": "5b53ae7d-ea11-4623-83f7-c12e0f8e725d",
+      "id": "25be3497-229e-4139-aff8-39a28dd9225f",
       "name": "Sheet row",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -491,7 +491,7 @@
         },
         "options": {}
       },
-      "id": "55720759-2038-4715-a564-fc3e46460856",
+      "id": "c6124156-39f5-4130-85a6-8f3bf9bd57f6",
       "name": "Write back to sheet",
       "type": "n8n-nodes-base.googleSheets",
       "typeVersion": 4.7,
@@ -502,7 +502,7 @@
     },
     {
       "parameters": {},
-      "id": "8e6afa6d-76f5-47c9-971e-d63853b881f0",
+      "id": "385388bc-ed32-4b23-8be3-8ce225bc16e6",
       "name": "Reset test guests",
       "type": "n8n-nodes-base.manualTrigger",
       "typeVersion": 1,
@@ -522,7 +522,7 @@
         },
         "returnAll": true
       },
-      "id": "bc463dd0-c98c-4289-b0b1-4b399377db1d",
+      "id": "ea8b1337-b9c5-439a-a127-897430f69257",
       "name": "Get guests to reset",
       "type": "n8n-nodes-base.dataTable",
       "typeVersion": 1.1,
@@ -537,7 +537,7 @@
         "mode": "runOnceForAllItems",
         "jsCode": "// The fixed test guests: their token starts with 7e57 (\"test\"). Real guests have random tokens and are never touched.\nconst rows = $input.all()\n  .map((item) => item.json)\n  .filter((row) => row && row.id !== undefined && /^7e57[a-f0-9]{60}$/.test(String(row.token || '')));\nreturn rows.map((row) => ({ json: { rowId: row.id } }));\n"
       },
-      "id": "ff07be79-c846-4828-ac71-51e60ac248cb",
+      "id": "bc3fbc76-e38c-4183-86fd-952342f5e83d",
       "name": "Test guests only",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -655,7 +655,7 @@
         },
         "options": {}
       },
-      "id": "eab0c3a9-25b7-48b1-aae5-9d552d26c86d",
+      "id": "1d3f944e-66f2-4dcf-a00b-3d9e0542fa44",
       "name": "Clear RSVP and check-in",
       "type": "n8n-nodes-base.dataTable",
       "typeVersion": 1.1,
@@ -840,7 +840,7 @@
   "settings": {
     "executionOrder": "v1"
   },
-  "versionId": "6a714fe8-dce1-46e0-bddf-c650da89bf72",
+  "versionId": "28dcb39b-5d55-4f3b-b215-37ccc921284f",
   "meta": {
     "templateCredsSetupCompleted": false
   },

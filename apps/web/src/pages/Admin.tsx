@@ -162,7 +162,7 @@ function GuestsPanel({ onExpired, invitationUrl }: { onExpired: () => void; invi
     </div>}
     <form className="admin-filters" onSubmit={(event) => { event.preventDefault(); filter(setQuery, search.trim()); setRefresh((value) => value + 1); }}>
       <label>Search name or ID<input value={search} maxLength={120} onChange={(event) => setSearch(event.target.value)} /></label>
-      <label>Event<select value={event} onChange={(e) => filter(setEvent, e.target.value)}><option value="all">All events</option><option value="ceremony">Holy Matrimony</option><option value="reception">Reception</option></select></label>
+      <label>Event<select value={event} onChange={(e) => filter(setEvent, e.target.value)}><option value="all">All events</option><option value="reception">Reception</option></select></label>
       <label>Attendance<select value={attendance} onChange={(e) => filter(setAttendance, e.target.value)}><option value="all">All responses</option><option value="yes">Attending</option><option value="no">Unable to attend</option></select></label>
       <label>Check-in<select value={status} onChange={(e) => filter(setStatus, e.target.value)}><option value="all">All statuses</option><option value="checked-in">Checked in</option><option value="not-checked-in">Not checked in</option></select></label>
       <label>Submitted date (UTC)<input type="date" value={date} onChange={(e) => filter(setDate, e.target.value)} /></label>
@@ -173,11 +173,10 @@ function GuestsPanel({ onExpired, invitationUrl }: { onExpired: () => void; invi
     {!loading && data && <>
       <p className="admin-muted">{data.total} matching reservations · timestamps shown in WITA</p>
       <div className="admin-table-wrap"><table>
-        <thead><tr><th>Guest</th><th>RSVP</th><th>Party</th><th>Table</th><th>Holy Matrimony</th><th>Reception</th><th>Submitted</th></tr></thead>
+        <thead><tr><th>Guest</th><th>RSVP</th><th>Party</th><th>Table</th><th>Reception</th><th>Submitted</th></tr></thead>
         <tbody>{data.entries.map((entry) => <tr key={entry.id}>
           <td><strong>{entry.name}</strong><small>{entry.id}</small></td>
           <td>{entry.attending === "yes" ? "Attending" : "Declined"}</td><td>{entry.guests}{entry.pax ? ` / ${entry.pax} pax` : ""}</td><td>{entry.table || "—"}</td>
-          <td>{entry.ceremonyScannedAt ? <span className="admin-checked">✓ {dateTime(entry.ceremonyScannedAt)}</span> : ["both", "ceremony"].includes(entry.event) ? "Not checked in" : "—"}</td>
           <td>{entry.receptionScannedAt ? <span className="admin-checked">✓ {dateTime(entry.receptionScannedAt)}</span> : ["both", "reception"].includes(entry.event) ? "Not checked in" : "—"}</td>
           <td>{dateTime(entry.createdAt)}</td>
         </tr>)}</tbody>
@@ -194,7 +193,7 @@ export default function Admin({ invitationUrl }: { invitationUrl?: string }) {
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const [tab, setTab] = useState("scan");
-  const [event, setEvent] = useState<EventKey>("ceremony");
+  const event: EventKey = "reception"; // the only event
   useEffect(() => {
     let live = true;
     weddingApi("/admin/session").then(() => { if (live) setSignedIn(true); }).catch(() => {}).finally(() => { if (live) setChecking(false); });
@@ -214,7 +213,7 @@ export default function Admin({ invitationUrl }: { invitationUrl?: string }) {
     </section> : <>
       <nav className="admin-tabs" aria-label="Admin sections"><button aria-pressed={tab === "scan"} onClick={() => setTab("scan")}>Scan QR</button><button aria-pressed={tab === "guests"} onClick={() => setTab("guests")}>Guest List</button></nav>
       {error && <p role="alert">{error}</p>}
-      {tab === "scan" ? <><label className="admin-entrance">Current entrance<select value={event} onChange={(e) => setEvent(e.target.value as EventKey)}><option value="ceremony">Holy Matrimony</option><option value="reception">Reception</option></select></label><ScanPanel key={event} event={event} onExpired={expired} /></> : <GuestsPanel invitationUrl={invitationUrl} onExpired={expired} />}
+      {tab === "scan" ? <><ScanPanel key={event} event={event} onExpired={expired} /></> : <GuestsPanel invitationUrl={invitationUrl} onExpired={expired} />}
     </>}
   </main>;
 }
