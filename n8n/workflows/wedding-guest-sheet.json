@@ -1,0 +1,848 @@
+{
+  "name": "Wedding - Guest Sheet",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "## Guest list from Google Sheets\n\nType guests in the sheet tab **Guests**: only **name**, **guests** (most people they may bring), **pax** (seats) and **table**. Leave **token**, **link** and **status** empty; this workflow fills them.\n\n**Top row, Sync guest sheet:** new rows get a secret token and are created in the **wedding_guests** Data Table; rows that already have a token update name / guests / pax / table. The sheet then shows each guest's personal link and RSVP / check-in status. Safe to run again. Nothing is ever deleted.\n\nBefore running: attach your Google credential to **Read guest sheet** and **Write back to sheet**, pick the spreadsheet in both, and set the site address in **Settings**.\n\n**Bottom row, Reset test guests:** clears RSVP and check-in of the fixed test guests (token starts with 7e57) so you can try RSVP and scanning again. Real guests are never touched.",
+        "width": 700,
+        "height": 380
+      },
+      "id": "f4d58cb0-ac1d-4f80-bb08-90537c20c550",
+      "name": "Note 3",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -900,
+        -440
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "4883c3f4-bee7-4087-9500-f22272d69d73",
+      "name": "Sync guest sheet",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -900,
+        40
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "// Edit siteUrl: where the invitation website is published. Each guest's link is <siteUrl>/AlbertStephanie/<token>.\nreturn [{ json: { siteUrl: 'https://invitation.loventra.dpdns.org' } }];\n"
+      },
+      "id": "bc5a67f3-54be-46e5-8270-37448ff54e80",
+      "name": "Settings",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -680,
+        40
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "sheet",
+        "operation": "read",
+        "documentId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "",
+          "cachedResultName": "Wedding Guest List"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Guests"
+        },
+        "filtersUI": {
+          "values": []
+        },
+        "options": {}
+      },
+      "id": "a89c11b1-8d7b-4c4a-b418-5443841720bb",
+      "name": "Read guest sheet",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        -460,
+        40
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "row",
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "mode": "name",
+          "value": "wedding_guests"
+        },
+        "returnAll": true
+      },
+      "id": "755f7d43-6081-4a0b-898d-dee1baad116b",
+      "name": "Get guests",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        -240,
+        40
+      ],
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "// Compares the Google Sheet with the wedding_guests Data Table.\n// The sheet owns name, guests, pax and table; the Data Table owns RSVP and check-in. A row with no token is a\n// new guest (a token is made for it next); a token the table already knows is an update; a token the table\n// does not know yet (for example the fixed test tokens) creates that guest with exactly that token.\nconst HEX64 = /^[a-f0-9]{64}$/;\nconst sheetRows = $('Read guest sheet').all().map((item) => item.json);\nconst known = new Set($input.all().map((item) => item.json).filter((row) => row && row.id !== undefined && row.token).map((row) => row.token));\nconst seen = new Set();\nconst out = [];\nfor (const row of sheetRows) {\n  const name = String(row.name ?? '').trim();\n  if (!name) continue; // empty line in the sheet\n  const guests = Math.floor(Number(row.guests));\n  const pax = Math.floor(Number(row.pax));\n  const base = {\n    row_number: row.row_number,\n    name,\n    max_guests: guests > 0 ? guests : 1,\n    pax: pax > 0 ? pax : 0,\n    table_name: String(row.table ?? '').trim(),\n  };\n  const raw = String(row.token ?? '').trim().toLowerCase();\n  if (raw && !HEX64.test(raw)) { out.push({ json: { ...base, op: 'bad', reason: 'invalid', rawToken: String(row.token).trim() } }); continue; }\n  if (raw && seen.has(raw)) { out.push({ json: { ...base, op: 'bad', reason: 'duplicate', rawToken: raw } }); continue; }\n  if (raw) seen.add(raw);\n  out.push({ json: { ...base, op: raw && known.has(raw) ? 'update' : 'create', existingToken: raw } });\n}\nreturn out;\n"
+      },
+      "id": "2b6027f3-1f52-4a30-9ff7-732d982348ea",
+      "name": "Plan sync",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -20,
+        40
+      ]
+    },
+    {
+      "parameters": {
+        "action": "generate",
+        "encodingType": "hex",
+        "stringLength": 64,
+        "dataPropertyName": "token"
+      },
+      "id": "c39d4549-c0c8-4246-b200-9a3b049d85cf",
+      "name": "New token",
+      "type": "n8n-nodes-base.crypto",
+      "typeVersion": 2,
+      "position": [
+        200,
+        40
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "// Every item already has a freshly generated token. Keep the sheet's own token when it has one.\nconst blank = {\n  phone: '', title: '', invite_sent_at: '', rsvp_status: '', rsvp_event: '', rsvp_guests: 0,\n  rsvp_request_key: '', rsvp_at: '', ceremony_checkin_at: '', reception_checkin_at: '',\n};\nreturn $input.all().map(({ json: row }) => ({\n  json: row.op === 'bad' ? row : { ...blank, ...row, token: row.existingToken || row.token },\n}));\n"
+      },
+      "id": "fa710d6f-6b6b-4b37-9389-565da07e130b",
+      "name": "Resolve",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        420,
+        40
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "expression",
+        "numberOutputs": 3,
+        "output": "={{ ({ create: 0, update: 1 })[$json.op] ?? 2 }}"
+      },
+      "id": "957bd598-859b-408a-a145-0e7ff26d8a61",
+      "name": "Sync route",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        640,
+        40
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "row",
+        "operation": "insert",
+        "dataTableId": {
+          "__rl": true,
+          "mode": "name",
+          "value": "wedding_guests"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "name": "={{ $json.name }}",
+            "phone": "={{ $json.phone }}",
+            "title": "={{ $json.title }}",
+            "max_guests": "={{ $json.max_guests }}",
+            "pax": "={{ $json.pax }}",
+            "table_name": "={{ $json.table_name }}",
+            "token": "={{ $json.token }}",
+            "invite_sent_at": "={{ $json.invite_sent_at }}",
+            "rsvp_status": "={{ $json.rsvp_status }}",
+            "rsvp_event": "={{ $json.rsvp_event }}",
+            "rsvp_guests": "={{ $json.rsvp_guests }}",
+            "rsvp_request_key": "={{ $json.rsvp_request_key }}",
+            "rsvp_at": "={{ $json.rsvp_at }}",
+            "ceremony_checkin_at": "={{ $json.ceremony_checkin_at }}",
+            "reception_checkin_at": "={{ $json.reception_checkin_at }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "name",
+              "displayName": "name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "phone",
+              "displayName": "phone",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "title",
+              "displayName": "title",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "max_guests",
+              "displayName": "max_guests",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "pax",
+              "displayName": "pax",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "table_name",
+              "displayName": "table_name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "token",
+              "displayName": "token",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "invite_sent_at",
+              "displayName": "invite_sent_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "rsvp_status",
+              "displayName": "rsvp_status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "rsvp_event",
+              "displayName": "rsvp_event",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "rsvp_guests",
+              "displayName": "rsvp_guests",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "rsvp_request_key",
+              "displayName": "rsvp_request_key",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "rsvp_at",
+              "displayName": "rsvp_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "ceremony_checkin_at",
+              "displayName": "ceremony_checkin_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "reception_checkin_at",
+              "displayName": "reception_checkin_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "4b9ddd68-d3d3-4549-9280-0a320fa5b556",
+      "name": "Create guest",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        880,
+        -80
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "row",
+        "operation": "update",
+        "dataTableId": {
+          "__rl": true,
+          "mode": "name",
+          "value": "wedding_guests"
+        },
+        "matchType": "allConditions",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "token",
+              "condition": "eq",
+              "keyValue": "={{ $json.token }}"
+            }
+          ]
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "name": "={{ $json.name }}",
+            "max_guests": "={{ $json.max_guests }}",
+            "pax": "={{ $json.pax }}",
+            "table_name": "={{ $json.table_name }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "name",
+              "displayName": "name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "max_guests",
+              "displayName": "max_guests",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "pax",
+              "displayName": "pax",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "table_name",
+              "displayName": "table_name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "ccd7eb22-ab53-4597-9d7f-a34486dce862",
+      "name": "Update guest",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        880,
+        60
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "// What goes back into the sheet for each row: its token, its personal link and where the guest stands.\nconst siteUrl = String($('Settings').first().json.siteUrl).replace(/\\/+$/, '');\nconst plan = $('Resolve').all().map((item) => item.json);\nconst statusOf = (row) => {\n  const parts = [];\n  if (row.rsvp_status === 'yes') parts.push(`Hadir${row.rsvp_event ? ` (${row.rsvp_event})` : ''}, ${Number(row.rsvp_guests) || 0} orang`);\n  else if (row.rsvp_status === 'no') parts.push('Tidak hadir');\n  else parts.push('Belum RSVP');\n  if (row.ceremony_checkin_at) parts.push('sudah check-in pemberkatan');\n  if (row.reception_checkin_at) parts.push('sudah check-in resepsi');\n  return parts.join(' · ');\n};\nconst out = [];\nfor (const { json: row } of $input.all()) {\n  if (row.op === 'bad') {\n    const why = row.reason === 'duplicate' ? 'Token dobel: kosongkan sel token' : 'Token tidak valid: kosongkan sel token';\n    out.push({ json: { row_number: row.row_number, token: row.rawToken, link: '', status: why } });\n    continue;\n  }\n  const planned = plan.find((item) => item.op !== 'bad' && item.token === row.token);\n  if (!planned) continue;\n  out.push({ json: { row_number: planned.row_number, token: row.token, link: `${siteUrl}/AlbertStephanie/${row.token}`, status: statusOf(row) } });\n}\nreturn out;\n"
+      },
+      "id": "5b53ae7d-ea11-4623-83f7-c12e0f8e725d",
+      "name": "Sheet row",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1120,
+        60
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "sheet",
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "",
+          "cachedResultName": "Wedding Guest List"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Guests"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "row_number": "={{ $json.row_number }}",
+            "token": "={{ $json.token }}",
+            "link": "={{ $json.link }}",
+            "status": "={{ $json.status }}"
+          },
+          "matchingColumns": [
+            "row_number"
+          ],
+          "schema": [
+            {
+              "id": "row_number",
+              "displayName": "row_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "readOnly": true,
+              "removed": false
+            },
+            {
+              "id": "token",
+              "displayName": "token",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "link",
+              "displayName": "link",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "55720759-2038-4715-a564-fc3e46460856",
+      "name": "Write back to sheet",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1340,
+        60
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "8e6afa6d-76f5-47c9-971e-d63853b881f0",
+      "name": "Reset test guests",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -900,
+        360
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "row",
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "mode": "name",
+          "value": "wedding_guests"
+        },
+        "returnAll": true
+      },
+      "id": "bc463dd0-c98c-4289-b0b1-4b399377db1d",
+      "name": "Get guests to reset",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        -680,
+        360
+      ],
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "// The fixed test guests: their token starts with 7e57 (\"test\"). Real guests have random tokens and are never touched.\nconst rows = $input.all()\n  .map((item) => item.json)\n  .filter((row) => row && row.id !== undefined && /^7e57[a-f0-9]{60}$/.test(String(row.token || '')));\nreturn rows.map((row) => ({ json: { rowId: row.id } }));\n"
+      },
+      "id": "ff07be79-c846-4828-ac71-51e60ac248cb",
+      "name": "Test guests only",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -460,
+        360
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "row",
+        "operation": "update",
+        "dataTableId": {
+          "__rl": true,
+          "mode": "name",
+          "value": "wedding_guests"
+        },
+        "matchType": "allConditions",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "id",
+              "condition": "eq",
+              "keyValue": "={{ $json.rowId }}"
+            }
+          ]
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "invite_sent_at": "",
+            "rsvp_status": "",
+            "rsvp_event": "",
+            "rsvp_guests": 0,
+            "rsvp_request_key": "",
+            "rsvp_at": "",
+            "ceremony_checkin_at": "",
+            "reception_checkin_at": ""
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "invite_sent_at",
+              "displayName": "invite_sent_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "rsvp_status",
+              "displayName": "rsvp_status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "rsvp_event",
+              "displayName": "rsvp_event",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "rsvp_guests",
+              "displayName": "rsvp_guests",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "rsvp_request_key",
+              "displayName": "rsvp_request_key",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "rsvp_at",
+              "displayName": "rsvp_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "ceremony_checkin_at",
+              "displayName": "ceremony_checkin_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "reception_checkin_at",
+              "displayName": "reception_checkin_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "eab0c3a9-25b7-48b1-aae5-9d552d26c86d",
+      "name": "Clear RSVP and check-in",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        -240,
+        360
+      ]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Sync guest sheet": {
+      "main": [
+        [
+          {
+            "node": "Settings",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Settings": {
+      "main": [
+        [
+          {
+            "node": "Read guest sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read guest sheet": {
+      "main": [
+        [
+          {
+            "node": "Get guests",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get guests": {
+      "main": [
+        [
+          {
+            "node": "Plan sync",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Plan sync": {
+      "main": [
+        [
+          {
+            "node": "New token",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "New token": {
+      "main": [
+        [
+          {
+            "node": "Resolve",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Resolve": {
+      "main": [
+        [
+          {
+            "node": "Sync route",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sync route": {
+      "main": [
+        [
+          {
+            "node": "Create guest",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Update guest",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Sheet row",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create guest": {
+      "main": [
+        [
+          {
+            "node": "Sheet row",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update guest": {
+      "main": [
+        [
+          {
+            "node": "Sheet row",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sheet row": {
+      "main": [
+        [
+          {
+            "node": "Write back to sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Reset test guests": {
+      "main": [
+        [
+          {
+            "node": "Get guests to reset",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get guests to reset": {
+      "main": [
+        [
+          {
+            "node": "Test guests only",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Test guests only": {
+      "main": [
+        [
+          {
+            "node": "Clear RSVP and check-in",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "6a714fe8-dce1-46e0-bddf-c650da89bf72",
+  "meta": {
+    "templateCredsSetupCompleted": false
+  },
+  "tags": []
+}

@@ -95,9 +95,18 @@ export async function weddingApi<T>(path: string, options: RequestInit = {}): Pr
   if ("local" in call) return call.local as T;
   return callWebhook<T>(Boolean(call.admin), call.payload, options.signal);
 }
+// A guest's personal link is /AlbertStephanie/<token>. The older ?invite=<token> form keeps working.
+export const INVITE_PATH = "AlbertStephanie";
+export function inviteTokenFromPath(): string | null {
+  const base = import.meta.env.BASE_URL.replace(/\/?$/, "/");
+  const path = window.location.pathname;
+  if (!path.toLowerCase().startsWith((base + INVITE_PATH + "/").toLowerCase())) return null;
+  const token = decodeURIComponent(path.slice(base.length + INVITE_PATH.length + 1).split("/")[0] ?? "");
+  return token || null;
+}
 export function savedReservationToken() {
   const query = new URLSearchParams(window.location.search).get("reservation");
   if (query) return query;
-  if (new URLSearchParams(window.location.search).has("invite")) return null;
+  if (new URLSearchParams(window.location.search).has("invite") || inviteTokenFromPath()) return null;
   try { return localStorage.getItem(RESERVATION_STORAGE_KEY); } catch { return null; }
 }

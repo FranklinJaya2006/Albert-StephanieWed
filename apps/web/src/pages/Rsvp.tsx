@@ -8,7 +8,7 @@ import Ornament from "../components/Ornament";
 import FramedPhoto from "../components/FramedPhoto";
 import PhotoCarousel from "../components/PhotoCarousel";
 import ReservationQr from "../components/ReservationQr";
-import { weddingApi, savedReservationToken, newRequestKey, DEMO_MODE, RESERVATION_STORAGE_KEY, type Reservation, type Wish } from "../lib/weddingApi";
+import { weddingApi, savedReservationToken, inviteTokenFromPath, newRequestKey, DEMO_MODE, RESERVATION_STORAGE_KEY, type Reservation, type Wish } from "../lib/weddingApi";
 import { invitation } from "../data/invitation";
 
 type Person = (typeof invitation)["groom"];
@@ -37,7 +37,7 @@ function PersonCard({ person, photo, photoClassName = "" }: { person: Person; ph
 function Rsvp({ shown = true, ready = true }: { shown?: boolean; ready?: boolean }) {
   const [searchParams, setSearchParams] = useSearchParams();
   const guestName = searchParams.get("to");
-  const inviteToken = DEMO_MODE ? null : searchParams.get("invite");
+  const inviteToken = DEMO_MODE ? null : (inviteTokenFromPath() ?? searchParams.get("invite"));
   const [invitationInfo, setInvitationInfo] = useState<{ name: string; maxGuests: number } | null>(null);
   const [checkingInvitation, setCheckingInvitation] = useState(true);
   const [allowUninvited, setAllowUninvited] = useState(false);

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { ApiError, weddingApi } from "../lib/weddingApi";
+import { ApiError, INVITE_PATH, weddingApi } from "../lib/weddingApi";
 import { invitation } from "../data/invitation";
 
 type EventKey = "ceremony" | "reception";
@@ -95,7 +95,7 @@ function InvitationManager({ onExpired, invitationUrl }: { onExpired: () => void
   }, [onExpired, refresh]);
   function link(token: string) {
     const url = new URL(invitationUrl ?? import.meta.env.BASE_URL, window.location.origin);
-    url.searchParams.set("invite", token);
+    url.pathname = `${url.pathname.replace(/\/?$/, "/")}${INVITE_PATH}/${encodeURIComponent(token)}`;
     return url.href;
   }
   return <details className="admin-invitation-manager">

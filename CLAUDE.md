@@ -45,7 +45,9 @@ apps/
                    src/filters.ts and drawn identically for live preview and saved photo.
                    Camera needs https (or localhost).
 n8n/workflows/     Exported n8n workflows (see n8n/README.md): `wedding-send-invitations.json` (Data Table -> WAHA, one personal link per guest) and
-                   `wedding-guest-api.json` (webhooks the site and admin desk call: invitation, RSVP, access card, wishes, QR check-in).
+                   `wedding-guest-api.json` (webhooks the site and admin desk call: invitation, RSVP, access card, wishes, QR check-in), and
+                   `wedding-guest-sheet.json` (Google Sheet guest list -> Data Table, writes tokens/links back; "Reset test guests" clears the
+                   fixed `7e57…` test guests so RSVP/scan can be retried). The sheet template is `n8n/wedding-guest-list-template.xlsx`.
 deploy/            Dockerfile.back, Dockerfile.edge (builds web + booth, serves via Caddy), Caddyfile.
 docker-compose.yml        Local dev only: n8n + WAHA.
 docker-compose.prod.yml   VPS stack; values come from the server's .env (see .env.prod.example).
@@ -73,7 +75,7 @@ docker-compose.prod.yml   VPS stack; values come from the server's .env (see .en
   for the "Yth. Bapak/Ibu ..." wording and file format. Ask before guessing its structure.
 - RSVPs, wishes and check-ins go from `apps/web` to the n8n **Guest API** webhooks (`VITE_N8N_WEBHOOK_BASE`; adapter in
   `src/lib/weddingApi.ts`, which keeps the old REST-style paths so pages did not change). The guest list is the n8n Data Table
-  `wedding_guests`; the 64-hex `token` per row is both the personal link id and the QR secret (`ASW:v1:<token>:<event>`). All
+  `wedding_guests`; the 64-hex `token` per row is both the personal link id (`/AlbertStephanie/<token>`; the old `?invite=<token>` still works) and the QR secret (`ASW:v1:<token>:<event>`). All
   guest rules live in the "Handle guest action" Code node. `apps/back/src/wedding.ts` (SQLite) is no longer called by the site.
   Admin sign-in is an admin key (`X-Admin-Key`, n8n Header Auth), not a username/password.
   The access card (on screen in `ReservationQr.tsx` and the downloaded PNG in `downloadAccessCard.ts`) shows `Pax` (Data Table `pax`, else the RSVP

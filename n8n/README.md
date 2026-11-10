@@ -6,9 +6,10 @@ The guest list, RSVPs, QR check-ins and wishes live in **n8n Data Tables**. Two 
 | --- | --- | --- | --- |
 | **Wedding - Send Invitations** | `workflows/wedding-send-invitations.json` | you, with *Execute workflow* | Sends each guest their own link over WhatsApp (WAHA) and marks them as sent |
 | **Wedding - Guest API** | `workflows/wedding-guest-api.json` | the website and the admin desk (webhooks) | Invitation lookup, RSVP, access card, wishes, admin guest list, QR check-in |
+| **Wedding - Guest Sheet** | `workflows/wedding-guest-sheet.json` | you, with *Sync guest sheet* / *Reset test guests* | Reads your Google Sheet guest list into the Data Table, makes each guest's token, writes the personal link and RSVP status back to the sheet; resets the test guests |
 
 ```text
-Data Table wedding_guests ──► Send Invitations ──► WAHA ──► guest's WhatsApp (their own ?invite=<token> link)
+Data Table wedding_guests ──► Send Invitations ──► WAHA ──► guest's WhatsApp (their own /AlbertStephanie/<token> link)
         ▲                                                         │
         │                                                         ▼
         └────────────── Guest API ◄── website: RSVP, access card (QR = ASW:v1:<token>:<event>)
@@ -46,7 +47,25 @@ In n8n: **Data tables → Create**. Names and columns must match exactly (`id`, 
 
 Already created the table? Just add the two columns `pax` (number) and `table_name` (string); existing rows stay valid. Fill them in the Data Table at any time: the card reads them live.
 
-Easiest way to add guests: the admin desk (**Guest List → Personal invitation links**). To paste many rows at once into n8n instead, give each a unique token, e.g. in a browser console: `crypto.randomUUID().replaceAll('-','') + crypto.randomUUID().replaceAll('-','')`.
+**Guest list in Google Sheets (no phone numbers needed):** upload [`wedding-guest-list-template.xlsx`](wedding-guest-list-template.xlsx) to Google Drive and open it as a Google Sheet (keep the tab named `Guests`). You only type `name`, `guests` (most people they may bring), `pax` (seats) and `table`; `token`, `link` and `status` are filled by n8n. Import **Wedding - Guest Sheet**, attach your Google credential to **Read guest sheet** and **Write back to sheet**, pick the spreadsheet in both, set `siteUrl` in **Settings**, then click **Sync guest sheet**:
+- a row with no token becomes a new guest with a random token; its link appears in the sheet,
+- a row whose token is known updates name / guests / pax / table only (RSVP and check-in are never overwritten),
+- a malformed or repeated token is reported in `status` and skipped; a blank line is ignored; nothing is ever deleted (deleting a sheet row does not delete the guest: remove it in the Data Table),
+- `status` shows Belum RSVP / Hadir (event, n orang) / Tidak hadir and check-ins as of the last sync.
+Optional: to see each token in the sheet the moment you type a name (before any sync), paste [`google-sheet-tokens.gs`](google-sheet-tokens.gs) into the sheet's Apps Script (Extensions > Apps Script). It writes a random 64-hex token once into the empty `token` cells; the sync then just creates that guest with that token. Don't use a `RANDBETWEEN` formula instead: formulas recalculate and would change every guest's link.
+Run it again whenever you add guests or want fresh statuses. Rows without a token are ignored by every other workflow until the sync has run.
+
+**Test guests.** The template has three fixed test guests (token starts with `7e57`). After the first sync they exist in the Data Table:
+
+| Guest | Invitation link | QR text to paste in the admin scanner |
+| --- | --- | --- |
+| TEST 1 (2 guests, Meja Tes) | `/AlbertStephanie/7e57000000000000000000000000000000000000000000000000000000000001` | `ASW:v1:7e57000000000000000000000000000000000000000000000000000000000001:ceremony` (or `:reception`) |
+| TEST 2 (3 guests, Meja Tes) | `/AlbertStephanie/7e57000000000000000000000000000000000000000000000000000000000002` | `ASW:v1:7e57000000000000000000000000000000000000000000000000000000000002:reception` |
+| TEST 3 (1 guest) | `/AlbertStephanie/7e57000000000000000000000000000000000000000000000000000000000003` | `ASW:v1:7e57000000000000000000000000000000000000000000000000000000000003:ceremony` |
+
+RSVP is never closed (the site and API have no deadline). It is one-time per link, so after trying one, run **Reset test guests** in the same workflow: it clears RSVP and check-in of the `7e57…` guests only, and you can RSVP and scan again. The QR is only valid after that guest has RSVPed yes for that event. Wishes the testers post stay in `wedding_wishes`: delete those rows by hand. The test tokens are public in this repo, so delete the TEST rows (sheet and Data Table) before sending real invitations.
+
+Easiest way to add guests one by one: the admin desk (**Guest List → Personal invitation links**). To paste many rows at once into n8n instead, give each a unique token, e.g. in a browser console: `crypto.randomUUID().replaceAll('-','') + crypto.randomUUID().replaceAll('-','')`.
 
 ## 2. Import and configure
 

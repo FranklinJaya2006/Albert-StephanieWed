@@ -7,7 +7,7 @@
         "width": 520,
         "height": 300
       },
-      "id": "b1ea7fec-fff6-41a5-80f0-fdd562c3d146",
+      "id": "9a4b83c6-f27f-4bb2-bc9c-0096d72a91d0",
       "name": "Note 1",
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
@@ -18,7 +18,7 @@
     },
     {
       "parameters": {},
-      "id": "6f7d11e7-f496-492c-aa3a-c00855330c22",
+      "id": "f9d935d0-3726-4d43-9d27-9a0c00644e1b",
       "name": "Execute workflow",
       "type": "n8n-nodes-base.manualTrigger",
       "typeVersion": 1,
@@ -30,9 +30,9 @@
     {
       "parameters": {
         "mode": "runOnceForAllItems",
-        "jsCode": "// The only place to edit before sending. Everything else in this workflow reads from here.\nreturn [{\n  json: {\n    // Where the invitation website is published. \"?invite=<token>\" is added for each guest.\n    siteUrl: 'https://REPLACE-WITH-YOUR-INVITATION-SITE/',\n    // WAHA as n8n reaches it. In the Docker stack this is the service name.\n    wahaUrl: 'http://waha:3000',\n    // The WAHA session that is logged in to the sending WhatsApp number.\n    wahaSession: 'REPLACE_WITH_WAHA_SESSION_NAME',\n    // {{title}} falls back to \"Bapak/Ibu\" when the guest has no title. Replace this wording.\n    messageTemplate: 'Yth. {{title}} {{name}},\\n\\nBerikut undangan pernikahan kami:\\n{{link}}',\n  },\n}];\n"
+        "jsCode": "// The only place to edit before sending. Everything else in this workflow reads from here.\nreturn [{\n  json: {\n    // Where the invitation website is published. \"/AlbertStephanie/<token>\" is added for each guest.\n    siteUrl: 'https://invitation.loventra.dpdns.org',\n    // WAHA as n8n reaches it. In the Docker stack this is the service name.\n    wahaUrl: 'http://waha:3000',\n    // The WAHA session that is logged in to the sending WhatsApp number.\n    wahaSession: 'REPLACE_WITH_WAHA_SESSION_NAME',\n    // {{title}} falls back to \"Bapak/Ibu\" when the guest has no title. Replace this wording.\n    messageTemplate: 'Yth. {{title}} {{name}},\\n\\nBerikut undangan pernikahan kami:\\n{{link}}',\n  },\n}];\n"
       },
-      "id": "430c8ae4-7b5b-4450-b25a-96c6c3b4ae0b",
+      "id": "ed4bc339-bf62-494c-a017-3fc2a63733c7",
       "name": "Settings",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -52,7 +52,7 @@
         },
         "returnAll": true
       },
-      "id": "b33c3f8f-0ddd-4810-b09d-440386d4446a",
+      "id": "f01aabc4-4261-4892-922d-d55c2075838e",
       "name": "Get guests",
       "type": "n8n-nodes-base.dataTable",
       "typeVersion": 1.1,
@@ -65,9 +65,9 @@
     {
       "parameters": {
         "mode": "runOnceForAllItems",
-        "jsCode": "// One message per guest who has not been invited yet and has a usable phone number.\n// Phone numbers arrive as 08xx, +62, 62xx, with spaces or dashes: keep digits, turn a leading 0 into 62.\nconst settings = $('Settings').first().json;\nconst guests = $input.all()\n  .map((item) => item.json)\n  .filter((row) => row && row.id !== undefined && row.token && !row.invite_sent_at);\n\nconst messages = [];\nfor (const guest of guests) {\n  let phone = String(guest.phone || '').replace(/\\D/g, '');\n  if (phone.startsWith('0')) phone = `62${phone.slice(1)}`;\n  if (!/^62\\d{8,12}$/.test(phone)) continue; // no usable number: leave the row unsent\n  const joiner = settings.siteUrl.includes('?') ? '&' : '?';\n  const link = `${settings.siteUrl}${joiner}invite=${guest.token}`;\n  const text = settings.messageTemplate\n    .replaceAll('{{name}}', guest.name)\n    .replaceAll('{{title}}', guest.title || 'Bapak/Ibu')\n    .replaceAll('{{link}}', link);\n  messages.push({ json: { rowId: guest.id, name: guest.name, chatId: `${phone}@c.us`, text } });\n}\nreturn messages;\n"
+        "jsCode": "// One message per guest who has not been invited yet and has a usable phone number.\n// Phone numbers arrive as 08xx, +62, 62xx, with spaces or dashes: keep digits, turn a leading 0 into 62.\nconst settings = $('Settings').first().json;\nconst guests = $input.all()\n  .map((item) => item.json)\n  .filter((row) => row && row.id !== undefined && row.token && !row.invite_sent_at);\n\nconst messages = [];\nfor (const guest of guests) {\n  let phone = String(guest.phone || '').replace(/\\D/g, '');\n  if (phone.startsWith('0')) phone = `62${phone.slice(1)}`;\n  if (!/^62\\d{8,12}$/.test(phone)) continue; // no usable number: leave the row unsent\n  const link = `${settings.siteUrl.replace(/\\/+$/, '')}/AlbertStephanie/${guest.token}`;\n  const text = settings.messageTemplate\n    .replaceAll('{{name}}', guest.name)\n    .replaceAll('{{title}}', guest.title || 'Bapak/Ibu')\n    .replaceAll('{{link}}', link);\n  messages.push({ json: { rowId: guest.id, name: guest.name, chatId: `${phone}@c.us`, text } });\n}\nreturn messages;\n"
       },
-      "id": "fd077711-6323-4b01-a898-a3c2c416c582",
+      "id": "81e109c3-0dce-4a04-9161-3b6ddc85d218",
       "name": "Prepare messages",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -81,7 +81,7 @@
         "batchSize": 1,
         "options": {}
       },
-      "id": "92ac10df-f426-47b5-ad8a-00d6299f866b",
+      "id": "d6b1bddd-8d76-40c9-820b-6406ae9c7fc7",
       "name": "Loop Over Guests",
       "type": "n8n-nodes-base.splitInBatches",
       "typeVersion": 3,
@@ -110,7 +110,7 @@
           }
         }
       },
-      "id": "c83fbfc9-a801-44d2-b408-50574c49aa68",
+      "id": "70e51bbc-e551-4aee-bd51-324ce90bac2f",
       "name": "Send WhatsApp",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
@@ -125,7 +125,7 @@
         "numberOutputs": 2,
         "output": "={{ $json.statusCode < 300 ? 0 : 1 }}"
       },
-      "id": "08fcabc6-bce3-44c4-a4ec-a58769c00d86",
+      "id": "c65af73d-f915-4f7e-b0cd-e8efa9b9ecf5",
       "name": "Sent OK?",
       "type": "n8n-nodes-base.switch",
       "typeVersion": 3.2,
@@ -173,7 +173,7 @@
         },
         "options": {}
       },
-      "id": "6ac52acd-cb95-4ada-87af-561efbf3b7e3",
+      "id": "20cc94ce-523b-4cff-bd01-6fd0af8378b5",
       "name": "Mark invite sent",
       "type": "n8n-nodes-base.dataTable",
       "typeVersion": 1.1,
@@ -188,7 +188,7 @@
         "amount": "={{ 5 + Math.floor(Math.random() * 8) }}",
         "unit": "seconds"
       },
-      "id": "eda7eb01-e967-4c05-8336-68607f9e86b6",
+      "id": "f584d761-72f5-4b3e-a0af-1eb436261d46",
       "name": "Pause between messages",
       "type": "n8n-nodes-base.wait",
       "typeVersion": 1.1,
@@ -312,7 +312,7 @@
   "settings": {
     "executionOrder": "v1"
   },
-  "versionId": "3b941338-5b8c-4261-b3b9-57d6475525ac",
+  "versionId": "731a8db5-58e7-4691-abd2-ba2423a93978",
   "meta": {
     "templateCredsSetupCompleted": false
   },
