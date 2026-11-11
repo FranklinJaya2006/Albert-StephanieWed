@@ -15,7 +15,7 @@ export default function ReservationQr({ reservation }: { reservation: Reservatio
   const images = useMemo(() => {
     function create(event: "reception") {
       const qr = qrcode(0, "M");
-      qr.addData(`ASW:${DEMO_MODE ? "demo" : "v1"}:${reservation.token}:${event}`);
+      qr.addData(`AS:${DEMO_MODE ? "demo" : "v1"}:${reservation.token}:${event}`);
       qr.make();
       return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(qr.createSvgTag(5, 20))}`;
     }

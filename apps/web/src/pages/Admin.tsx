@@ -63,7 +63,7 @@ function ScanPanel({ event, onExpired }: { event: EventKey; onExpired: () => voi
         <button type="button" disabled={busy || starting} onClick={camera ? stop : start}>{starting ? "Starting camera…" : camera ? "Stop camera" : "Start camera"}</button>
       </div>
       <form className="admin-form" onSubmit={(event) => { event.preventDefault(); void scan(qr); }}>
-        <label>QR contents (manual entry)<textarea value={qr} maxLength={512} onChange={(event) => setQr(event.target.value)} placeholder="ASW:v1:…" rows={3} required /></label>
+        <label>QR contents (manual entry)<textarea value={qr} maxLength={512} onChange={(event) => setQr(event.target.value)} placeholder="AS:v1:…" rows={3} required /></label>
         <button type="submit" disabled={busy || !qr.trim()}>{busy ? "Checking card…" : "Check in guest"}</button>
       </form>
       {error && <div className="admin-alert admin-alert-error" role="alert">{error}</div>}

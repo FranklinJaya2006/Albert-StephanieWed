@@ -49,7 +49,7 @@ To run the same preview locally, use `npm run dev:demo -w web`, or `npm run buil
 - Live submissions without a valid personal link are blocked. For local trials only, set both `NODE_ENV=test` and `WEDDING_ALLOW_TEST_RESERVATIONS=true` on the backend. A frontend URL flag cannot bypass the restriction. Production wiring never enables that flag.
 
 - A successful form submission creates a server-issued reservation ID and a 256-bit access token. Retries of the same submission reuse the request key and do not create duplicate reservations.
-- The card's QR is `ASW:v1:<access-token>:<ceremony-or-reception>`. The token does not contain the guest's name. Each event has a separate QR but retains the same reservation ID.
+- The card's QR is `AS:v1:<access-token>:<ceremony-or-reception>` (older cards with the `ASW:` prefix are still accepted). The token does not contain the guest's name. Each event has a separate QR but retains the same reservation ID.
 - The saved card URL contains the access token; it can reopen the reservation from the database on another device. Local storage only remembers this link, not the authoritative reservation or check-in status.
 - Declined reservations are listed in admin but receive no entrance pass.
 - Old sandbox/local-only QR codes are not valid check-in passes. Guests using those cards must submit a new reservation through the connected backend. Old sample browser data is not silently imported into production.

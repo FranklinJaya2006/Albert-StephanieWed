@@ -7,7 +7,7 @@
         "width": 520,
         "height": 300
       },
-      "id": "eef64f5b-93f0-48e5-95ea-9a552d289427",
+      "id": "a272f222-9e02-4ad1-be19-61924294749f",
       "name": "Note 1",
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
@@ -18,7 +18,7 @@
     },
     {
       "parameters": {},
-      "id": "a0502ca9-5662-4460-acfe-e6d37b3c2db2",
+      "id": "1e16a205-cbbb-4c0f-bf65-2e8b4eb71d69",
       "name": "Execute workflow",
       "type": "n8n-nodes-base.manualTrigger",
       "typeVersion": 1,
@@ -32,7 +32,7 @@
         "mode": "runOnceForAllItems",
         "jsCode": "// The only place to edit before sending. Everything else in this workflow reads from here.\nreturn [{\n  json: {\n    // Where the invitation website is published. \"/AlbertStephanie/<token>\" is added for each guest.\n    siteUrl: 'https://invitation.loventra.dpdns.org',\n    // WAHA as n8n reaches it. In the Docker stack this is the service name.\n    wahaUrl: 'http://waha:3000',\n    // The WAHA session that is logged in to the sending WhatsApp number.\n    wahaSession: 'REPLACE_WITH_WAHA_SESSION_NAME',\n    // {{title}} falls back to \"Bapak/Ibu\" when the guest has no title. Replace this wording.\n    messageTemplate: 'Yth. {{title}} {{name}},\\n\\nBerikut undangan pernikahan kami:\\n{{link}}',\n  },\n}];\n"
       },
-      "id": "eff9a32a-04d3-4c4e-ad6f-ef423c4379cd",
+      "id": "bda19add-5145-4321-af4b-dab59b12b8a8",
       "name": "Settings",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -52,7 +52,7 @@
         },
         "returnAll": true
       },
-      "id": "35b55633-b324-4f9d-af94-b99fab1d7b6a",
+      "id": "bd00d2c4-eb22-4a4e-8d22-1d81b089c2b0",
       "name": "Get guests",
       "type": "n8n-nodes-base.dataTable",
       "typeVersion": 1.1,
@@ -67,7 +67,7 @@
         "mode": "runOnceForAllItems",
         "jsCode": "// One message per guest who has not been invited yet and has a usable phone number.\n// Phone numbers arrive as 08xx, +62, 62xx, with spaces or dashes: keep digits, turn a leading 0 into 62.\nconst settings = $('Settings').first().json;\nconst guests = $input.all()\n  .map((item) => item.json)\n  .filter((row) => row && row.id !== undefined && row.token && !row.invite_sent_at);\n\nconst messages = [];\nfor (const guest of guests) {\n  let phone = String(guest.phone || '').replace(/\\D/g, '');\n  if (phone.startsWith('0')) phone = `62${phone.slice(1)}`;\n  if (!/^62\\d{8,12}$/.test(phone)) continue; // no usable number: leave the row unsent\n  const link = `${settings.siteUrl.replace(/\\/+$/, '')}/AlbertStephanie/${guest.token}`;\n  const text = settings.messageTemplate\n    .replaceAll('{{name}}', guest.name)\n    .replaceAll('{{title}}', guest.title || 'Bapak/Ibu')\n    .replaceAll('{{link}}', link);\n  messages.push({ json: { rowId: guest.id, name: guest.name, chatId: `${phone}@c.us`, text } });\n}\nreturn messages;\n"
       },
-      "id": "3dd3783a-8904-4748-b711-2bfc0abbc71f",
+      "id": "638ef4b6-7be1-4504-869e-f90a4199e3f4",
       "name": "Prepare messages",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -81,7 +81,7 @@
         "batchSize": 1,
         "options": {}
       },
-      "id": "d923fd96-8385-4337-b3ab-43852f603586",
+      "id": "5c3d9ab7-21fb-4373-9c41-7c431ebe6573",
       "name": "Loop Over Guests",
       "type": "n8n-nodes-base.splitInBatches",
       "typeVersion": 3,
@@ -110,7 +110,7 @@
           }
         }
       },
-      "id": "67fcd364-8803-43e3-b4c4-03653946f2e5",
+      "id": "e774130f-57cc-468e-a9bf-1088ceecfc43",
       "name": "Send WhatsApp",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
@@ -125,7 +125,7 @@
         "numberOutputs": 2,
         "output": "={{ $json.statusCode < 300 ? 0 : 1 }}"
       },
-      "id": "7150c0a5-d0ff-4588-ad33-f568be62dc4b",
+      "id": "6da41165-c3fb-46b4-bf9c-7a9ce43bd7e7",
       "name": "Sent OK?",
       "type": "n8n-nodes-base.switch",
       "typeVersion": 3.2,
@@ -173,7 +173,7 @@
         },
         "options": {}
       },
-      "id": "b1e1ea51-7851-464e-b114-dc7f1803bdfd",
+      "id": "f8759330-e2c1-4495-816e-8e5f5790484f",
       "name": "Mark invite sent",
       "type": "n8n-nodes-base.dataTable",
       "typeVersion": 1.1,
@@ -188,7 +188,7 @@
         "amount": "={{ 5 + Math.floor(Math.random() * 8) }}",
         "unit": "seconds"
       },
-      "id": "647acac4-5872-419d-985b-7675458467da",
+      "id": "c6999e03-2ab9-45f6-a7ea-fc101d3a4339",
       "name": "Pause between messages",
       "type": "n8n-nodes-base.wait",
       "typeVersion": 1.1,
@@ -312,7 +312,7 @@
   "settings": {
     "executionOrder": "v1"
   },
-  "versionId": "9bc68e06-53e5-4351-9028-9316ce9aa5a9",
+  "versionId": "75a3cddd-306d-4dda-9f89-8948544067f3",
   "meta": {
     "templateCredsSetupCompleted": false
   },

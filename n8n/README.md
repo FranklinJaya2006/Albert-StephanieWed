@@ -12,7 +12,7 @@ The guest list, RSVPs, QR check-ins and wishes live in **n8n Data Tables**. Two 
 Data Table wedding_guests ──► Send Invitations ──► WAHA ──► guest's WhatsApp (their own /AlbertStephanie/<token> link)
         ▲                                                         │
         │                                                         ▼
-        └────────────── Guest API ◄── website: RSVP, access card (QR = ASW:v1:<token>:<event>)
+        └────────────── Guest API ◄── website: RSVP, access card (QR = AS:v1:<token>:<event>)
                             ▲
                             └── admin desk: add guests, scan QR, guest list
 ```
@@ -62,6 +62,11 @@ curl -X POST https://<your-n8n>/webhook/wedding-sync -H 'X-Admin-Key: <your admi
 
 Call it one at a time: two syncs at the same moment could create the same new sheet row twice.
 
+**Refresh the sheet right after each RSVP.** The Guest API can tell the sheet workflow the moment a guest answers, so their row shows "Hadir, 2 orang" (or "Tidak hadir") without a manual sync. It updates only that guest's row, so several RSVPs at once are safe. It is switched off in the export because it needs your credential. Setup, once:
+1. In **Wedding - Guest Sheet**: open the **RSVP update webhook** node, set *Authentication* to Header Auth with your `X-Admin-Key` credential, and keep the workflow **active** (the Google credential must be attached to **Read sheet row** and **Write back to sheet** too).
+2. In **Wedding - Guest API**: open the **Update sheet row** node, check the URL (`https://<your-n8n>/webhook/wedding-sheet-update`), attach the same Header Auth credential, then **enable** the node (it is disabled in the export).
+Only guests that are in the sheet are updated (matched by `token`); a failed call never affects the guest's RSVP.
+
 **Kind Words.** The website's Kind Words form and list already go through n8n: the form calls the Guest API webhook (`wish-add`), the list reads `wishes-list`, and every wish is a row in the Data Table `wedding_wishes` (nothing is stored on the website or the VPS). To get them into a spreadsheet, run **Export wishes** in the same workflow: it writes every wish to the sheet tab `Kind Words` (columns `id`, `time` in UTC, `name`, `message`), oldest first. Run it once after the event (or any time): it matches on `id`, so wishes already exported are updated, never duplicated. In the same Google Sheet use *File > Download* to get an .xlsx or .csv.
 
 On the invitation, more than three wishes scroll by themselves (vertically and endlessly; hovering, touching or scrolling pauses it, and guests can scroll by hand). The website shows the newest 100. On the admin desk the **Kind Words** tab lists every wish (up to 500, newest first, with the time) so the couple can read them: it asks the admin webhook for `admin-wishes`, which needs the admin key. Rows without a token are ignored by every other workflow until the sync has run.
@@ -70,9 +75,9 @@ On the invitation, more than three wishes scroll by themselves (vertically and e
 
 | Guest | Invitation link | QR text to paste in the admin scanner |
 | --- | --- | --- |
-| TEST 1 (pax 2, Meja Tes) | `/AlbertStephanie/7e57000000000000000000000000000000000000000000000000000000000001` | `ASW:v1:7e57000000000000000000000000000000000000000000000000000000000001:reception` |
-| TEST 2 (pax 3, Meja Tes) | `/AlbertStephanie/7e57000000000000000000000000000000000000000000000000000000000002` | `ASW:v1:7e57000000000000000000000000000000000000000000000000000000000002:reception` |
-| TEST 3 (pax 1) | `/AlbertStephanie/7e57000000000000000000000000000000000000000000000000000000000003` | `ASW:v1:7e57000000000000000000000000000000000000000000000000000000000003:reception` |
+| TEST 1 (pax 2, Meja Tes) | `/AlbertStephanie/7e57000000000000000000000000000000000000000000000000000000000001` | `AS:v1:7e57000000000000000000000000000000000000000000000000000000000001:reception` |
+| TEST 2 (pax 3, Meja Tes) | `/AlbertStephanie/7e57000000000000000000000000000000000000000000000000000000000002` | `AS:v1:7e57000000000000000000000000000000000000000000000000000000000002:reception` |
+| TEST 3 (pax 1) | `/AlbertStephanie/7e57000000000000000000000000000000000000000000000000000000000003` | `AS:v1:7e57000000000000000000000000000000000000000000000000000000000003:reception` |
 
 RSVP is never closed (the site and API have no deadline). It is one-time per link, so after trying one, run **Reset test guests** in the same workflow: it clears RSVP and check-in of the `7e57…` guests only, and you can RSVP and scan again. The QR is only valid after that guest has RSVPed yes for that event. Wishes the testers post stay in `wedding_wishes`: delete those rows by hand. The test tokens are public in this repo, so delete the TEST rows (sheet and Data Table) before sending real invitations.
 
