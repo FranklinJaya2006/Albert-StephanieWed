@@ -34,7 +34,7 @@ apps/
                    - "/"     Cover — photo, A&T monogram, "Let's Begin"
                    - "/rsvp" Invitation — "Dear Mr/Mrs/Ms {?to=}", groom & bride, countdown,
                              event cards, Reservation form (name and number of guests are shown read-only, both from the sheet / Data Table (`pax`); the only question is two attendance buttons "Will attend" / "Unable to attend", none selected at first and Confirm locked until one is pressed; no event question, no contact fields), portrait +
-                             4 gallery photos in an even 2×2 grid (`portraits` in data; "" = placeholder), Kind Words form (name + wishes), closing.
+                             4 gallery photos in an even 2×2 grid (`portraits` in data; "" = placeholder), Kind Words form (name + wishes; the list below it scrolls by itself, vertically and endlessly, once there are more than 3 wishes, and can still be scrolled by hand: see `WishList` in `Rsvp.tsx`), closing. The admin desk has a Kind Words tab (`admin-wishes`, up to 500) so the couple can read every wish.
                              Corner flower accents come from components/Florals.tsx.
                    - "/gallery" All gallery photos ("View More" from /rsvp), keeps ?to=
                    All placeholder content + photo paths live in src/data/invitation.ts.

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { ApiError, INVITE_PATH, weddingApi } from "../lib/weddingApi";
+import { ApiError, INVITE_PATH, weddingApi, type Wish } from "../lib/weddingApi";
 import { invitation } from "../data/invitation";
 
 type EventKey = "reception";
@@ -187,6 +187,30 @@ function GuestsPanel({ onExpired, invitationUrl }: { onExpired: () => void; invi
   </section>;
 }
 
+function WishesPanel({ onExpired }: { onExpired: () => void }) {
+  const [wishes, setWishes] = useState<Wish[] | null>(null);
+  const [error, setError] = useState("");
+  const [reload, setReload] = useState(0);
+  useEffect(() => {
+    let live = true;
+    weddingApi<Wish[]>("/admin/wishes").then((items) => { if (live) { setWishes(items); setError(""); } }).catch((error: Error) => {
+      if (!live) return;
+      if (error instanceof ApiError && error.status === 401) onExpired();
+      setError(error.message);
+    });
+    return () => { live = false; };
+  }, [onExpired, reload]);
+  return <section className="admin-panel" aria-labelledby="wishes-title">
+    <h2 id="wishes-title">Kind Words</h2>
+    <p className="admin-muted">Wishes and prayers from the guests, newest first.{wishes ? ` ${wishes.length} so far.` : ""}</p>
+    <div className="admin-actions"><button type="button" onClick={() => setReload((n) => n + 1)}>Refresh</button></div>
+    {error && <div className="admin-alert admin-alert-error" role="alert">{error}</div>}
+    {!wishes && !error && <p role="status">Loading wishes…</p>}
+    {wishes && wishes.length === 0 && <p className="admin-muted">No wishes yet.</p>}
+    <ul className="admin-wishes">{(wishes ?? []).map((wish) => <li key={wish.id}><strong>{wish.name}</strong><small>{dateTime(wish.createdAt)}</small><p>{wish.message}</p></li>)}</ul>
+  </section>;
+}
+
 export default function Admin({ invitationUrl }: { invitationUrl?: string }) {
   const [signedIn, setSignedIn] = useState(false);
   const [checking, setChecking] = useState(true);
@@ -211,9 +235,9 @@ export default function Admin({ invitationUrl }: { invitationUrl?: string }) {
       }}><label>Admin key<input name="key" type="password" autoComplete="current-password" maxLength={256} required /></label><button disabled={busy}>{busy ? "Signing in…" : "Sign in"}</button></form>
       {error && <p className="admin-alert admin-alert-error" role="alert">{error}</p>}
     </section> : <>
-      <nav className="admin-tabs" aria-label="Admin sections"><button aria-pressed={tab === "scan"} onClick={() => setTab("scan")}>Scan QR</button><button aria-pressed={tab === "guests"} onClick={() => setTab("guests")}>Guest List</button></nav>
+      <nav className="admin-tabs" aria-label="Admin sections"><button aria-pressed={tab === "scan"} onClick={() => setTab("scan")}>Scan QR</button><button aria-pressed={tab === "guests"} onClick={() => setTab("guests")}>Guest List</button><button aria-pressed={tab === "wishes"} onClick={() => setTab("wishes")}>Kind Words</button></nav>
       {error && <p role="alert">{error}</p>}
-      {tab === "scan" ? <><ScanPanel key={event} event={event} onExpired={expired} /></> : <GuestsPanel invitationUrl={invitationUrl} onExpired={expired} />}
+      {tab === "scan" ? <><ScanPanel key={event} event={event} onExpired={expired} /></> : tab === "guests" ? <GuestsPanel invitationUrl={invitationUrl} onExpired={expired} /> : <WishesPanel onExpired={expired} />}
     </>}
   </main>;
 }

@@ -34,6 +34,87 @@ function PersonCard({ person, photo, photoClassName = "" }: { person: Person; ph
   );
 }
 
+// More than three wishes: a vertical list that scrolls by itself, forever (the list is drawn twice and jumps back by exactly one copy),
+// and can still be scrolled by hand. The automatic scrolling pauses while the guest hovers, touches or scrolls it, and resumes afterwards.
+const WISH_SCROLL_SPEED = 28; // px per second
+function WishList({ wishes }: { wishes: Wish[] }) {
+  const scroller = useRef<HTMLDivElement>(null);
+  const loop = wishes.length > 3;
+  useEffect(() => {
+    const el = scroller.current;
+    const track = el?.firstElementChild as HTMLElement | null;
+    if (!loop || !el || !track) return;
+    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const half = () => el.scrollHeight / 2;
+    let raf = 0, last = 0, pos = el.scrollTop, paused = reduced, visible = false, timer = 0;
+    const hold = (ms = 0) => {
+      window.clearTimeout(timer);
+      paused = true;
+      if (ms && !reduced) timer = window.setTimeout(() => { pos = el.scrollTop; paused = false; }, ms);
+    };
+    const tick = (now: number) => {
+      raf = requestAnimationFrame(tick);
+      const dt = last ? Math.min(now - last, 64) : 0;
+      last = now;
+      if (paused || !visible) return;
+      pos += (WISH_SCROLL_SPEED * dt) / 1000;
+      if (pos >= half()) pos -= half();
+      el.scrollTop = pos;
+    };
+    // The window must be shorter than one copy of the list, or the copy underneath would show.
+    const size = () => {
+      const rem = parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
+      el.style.height = Math.max(120, Math.min(34 * rem, window.innerHeight * 0.8, track.offsetHeight - 16)) + "px";
+    };
+    const onScroll = () => { if (paused && el.scrollTop >= half()) el.scrollTop -= half(); };
+    const onPointerEnter = (e: PointerEvent) => { if (e.pointerType === "mouse") hold(); };
+    const onPointerLeave = (e: PointerEvent) => { if (e.pointerType === "mouse") hold(1200); };
+    const onTouchStart = () => hold();
+    const onTouchEnd = () => hold(3500);
+    const onWheel = () => hold(3000);
+    const onFocusIn = () => hold();
+    const onFocusOut = () => hold(1500);
+    size();
+    const resize = new ResizeObserver(size);
+    resize.observe(track);
+    const seen = new IntersectionObserver(([entry]) => { visible = entry.isIntersecting; if (visible) pos = el.scrollTop; }, { threshold: 0.05 });
+    seen.observe(el);
+    el.addEventListener("scroll", onScroll, { passive: true });
+    el.addEventListener("pointerenter", onPointerEnter);
+    el.addEventListener("pointerleave", onPointerLeave);
+    el.addEventListener("touchstart", onTouchStart, { passive: true });
+    el.addEventListener("touchend", onTouchEnd, { passive: true });
+    el.addEventListener("touchcancel", onTouchEnd, { passive: true });
+    el.addEventListener("wheel", onWheel, { passive: true });
+    el.addEventListener("focusin", onFocusIn);
+    el.addEventListener("focusout", onFocusOut);
+    raf = requestAnimationFrame(tick);
+    return () => {
+      cancelAnimationFrame(raf);
+      window.clearTimeout(timer);
+      resize.disconnect();
+      seen.disconnect();
+      el.removeEventListener("scroll", onScroll);
+      el.removeEventListener("pointerenter", onPointerEnter);
+      el.removeEventListener("pointerleave", onPointerLeave);
+      el.removeEventListener("touchstart", onTouchStart);
+      el.removeEventListener("touchend", onTouchEnd);
+      el.removeEventListener("touchcancel", onTouchEnd);
+      el.removeEventListener("wheel", onWheel);
+      el.removeEventListener("focusin", onFocusIn);
+      el.removeEventListener("focusout", onFocusOut);
+    };
+  }, [loop, wishes.length]);
+  const entries = (copy: string) => wishes.map((entry) => <article className="guest-entry wish-entry" key={copy + "-" + entry.id}><h3>{entry.name}</h3><p>{entry.message}</p></article>);
+  if (!loop) return <>{entries("a")}</>;
+  return (
+    <div className="wish-scroller" ref={scroller} tabIndex={0} role="region" aria-label="Guest wishes, scrolling automatically">
+      <div className="wish-scroller-track">{entries("a")}</div>
+      <div className="wish-scroller-track" aria-hidden="true">{entries("b")}</div>
+    </div>
+  );
+}
+
 function Rsvp({ shown = true, ready = true }: { shown?: boolean; ready?: boolean }) {
   const [searchParams, setSearchParams] = useSearchParams();
   const guestName = searchParams.get("to");
@@ -284,7 +365,7 @@ function Rsvp({ shown = true, ready = true }: { shown?: boolean; ready?: boolean
         {wished && <button type="button" className="text-button" onClick={() => setWished(false)}>Write another wish</button>}
         {wishError && <p role="alert">{wishError}</p>}
         <div className="guest-results" aria-label="Guest wishes" aria-live="polite">
-          {wishes.map((entry) => <article className="guest-entry wish-entry" key={entry.id}><h3>{entry.name}</h3><p>{entry.message}</p></article>)}
+          <WishList wishes={wishes} />
         </div>
       </section>
 

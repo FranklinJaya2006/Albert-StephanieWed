@@ -31,6 +31,7 @@ function toCall(path: string, method: string, body: Record<string, unknown>): Ca
   if (pathname === "/reservations" && method === "POST") return { payload: { ...body, action: "rsvp" } };
   if (pathname.startsWith("/reservations/")) return { payload: { action: "reservation", token } };
   if (pathname === "/wishes") return { payload: method === "POST" ? { ...body, action: "wish-add" } : { action: "wishes-list" } };
+  if (pathname === "/admin/wishes") return { admin: true, payload: { action: "admin-wishes" } };
   if (pathname === "/admin/session") return { admin: true, payload: { action: "admin-check" } };
   if (pathname === "/admin/invitations") return { admin: true, payload: method === "POST" ? { ...body, action: "admin-add-guest" } : { action: "admin-guests" } };
   if (pathname === "/admin/checkins") return { admin: true, payload: { ...body, action: "checkin" } };
