@@ -75,7 +75,7 @@ docker-compose.prod.yml   VPS stack; values come from the server's .env (see .en
   for the "Yth. Bapak/Ibu ..." wording and file format. Ask before guessing its structure.
 - RSVPs, wishes and check-ins go from `apps/web` to the n8n **Guest API** webhooks (`VITE_N8N_WEBHOOK_BASE`; adapter in
   `src/lib/weddingApi.ts`, which keeps the old REST-style paths so pages did not change). The guest list is the n8n Data Table
-  `wedding_guests`; the `token` per row (8 hex characters for new guests; older 64-hex ones are still accepted) is both the personal link id (`/AlbertStephanie/<token>`; the old `?invite=<token>` still works) and the QR secret (`ASW:v1:<token>:<event>`). All
+  `wedding_guests`; the `token` per row (16 hex characters starting with a letter for new guests; any 8 to 64 hex characters is accepted) is both the personal link id (`/AlbertStephanie/<token>`; the old `?invite=<token>` still works) and the QR secret (`ASW:v1:<token>:<event>`). All
   guest rules live in the "Handle guest action" Code node. `apps/back/src/wedding.ts` (SQLite) is no longer called by the site.
   Admin sign-in is an admin key (`X-Admin-Key`, n8n Header Auth), not a username/password.
   The access card (on screen in `ReservationQr.tsx` and the downloaded PNG in `downloadAccessCard.ts`) shows `Guest` ("N guests"; Data Table `pax`, else the RSVP

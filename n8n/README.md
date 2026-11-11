@@ -17,7 +17,7 @@ Data Table wedding_guests ──► Send Invitations ──► WAHA ──► gu
                             └── admin desk: add guests, scan QR, guest list
 ```
 
-Each guest has one row. Their **`token`** (8 random hex characters, e.g. `3fa91c07`; older 64-character tokens still work) is the personal id: it is in their link, and it is the secret inside their QR. The QR holds no name.
+Each guest has one row. Their **`token`** (16 random hex characters starting with a letter, e.g. `c3fa91c07d2e4b58`; older 8- and 64-character tokens still work, any 8 to 64 hex characters is accepted) is the personal id: it is in their link, and it is the secret inside their QR. The QR holds no name.
 
 ## 1. Create the Data Tables
 
@@ -33,7 +33,7 @@ In n8n: **Data tables → Create**. Names and columns must match exactly (`id`, 
 | `max_guests` | number | you / admin desk (1–5): the most the guest may confirm |
 | `pax` | number | you / admin desk (optional): the seats you assign; printed on the access card as "N pax". Empty or 0 means the card shows the RSVP count |
 | `table_name` | string | you / admin desk (optional): printed on the access card and shown to the usher when the QR is scanned |
-| `token` | string | admin desk creates it; if you add rows by hand, leave it empty and run the sheet sync, or type 8 random hex characters (0-9, a-f) |
+| `token` | string | admin desk creates it; if you add rows by hand, leave it empty and run the sheet sync, or type 16 random hex characters (0-9, a-f, starting with a letter) |
 | `invite_sent_at` | string | Send Invitations |
 | `rsvp_status` | string | Guest API (`yes` / `no`) |
 | `rsvp_event` | string | Guest API (`ceremony` / `reception` / `both`) |
@@ -51,8 +51,16 @@ Already created the table? Just add the two columns `pax` (number) and `table_na
 - a row whose token is known updates name / pax / table only (the Data Table `max_guests` and `pax` both get the sheet's `pax`; an empty `pax` means 1) (RSVP and check-in are never overwritten),
 - a malformed or repeated token is reported in `status` and skipped; a blank line is ignored; nothing is ever deleted (deleting a sheet row does not delete the guest: remove it in the Data Table),
 - `status` shows Belum RSVP / Hadir, n orang / Tidak hadir, plus "sudah check-in", as of the last sync.
-Optional: to see each token in the sheet the moment you type a name (before any sync), paste [`Code.gs`](Code.gs) into the sheet's Apps Script (Extensions > Apps Script, the default file is already called Code.gs: replace its content). It writes a random 8-hex token once into the empty `token` cells; the sync then just creates that guest with that token. Don't use a `RANDBETWEEN` formula instead: formulas recalculate and would change every guest's link.
+Optional: to see each token in the sheet the moment you type a name (before any sync), paste [`Code.gs`](Code.gs) into the sheet's Apps Script (Extensions > Apps Script, the default file is already called Code.gs: replace its content). It writes a random 16-hex token once into the empty `token` cells; the sync then just creates that guest with that token. Don't use a `RANDBETWEEN` formula instead: formulas recalculate and would change every guest's link.
 Run it again whenever you add guests or want fresh statuses.
+
+**Update the sheet from outside n8n (webhook).** The same workflow has a **Sync webhook** node: `POST https://<your-n8n>/webhook/wedding-sync`. It runs exactly the same sync as the button (new rows get a token and a link, existing rows get fresh `status`), answers immediately and finishes in the background. Setup: open the **Sync webhook** node, set *Authentication* to Header Auth and attach a credential (header `X-Admin-Key`; you can reuse the one of the Admin API node), then activate the workflow. Use it from anywhere:
+
+```bash
+curl -X POST https://<your-n8n>/webhook/wedding-sync -H 'X-Admin-Key: <your admin key>'
+```
+
+Call it one at a time: two syncs at the same moment could create the same new sheet row twice.
 
 **Kind Words.** The website's Kind Words form and list already go through n8n: the form calls the Guest API webhook (`wish-add`), the list reads `wishes-list`, and every wish is a row in the Data Table `wedding_wishes` (nothing is stored on the website or the VPS). To get them into a spreadsheet, run **Export wishes** in the same workflow: it writes every wish to the sheet tab `Kind Words` (columns `id`, `time` in UTC, `name`, `message`), oldest first. Run it once after the event (or any time): it matches on `id`, so wishes already exported are updated, never duplicated. In the same Google Sheet use *File > Download* to get an .xlsx or .csv. Rows without a token are ignored by every other workflow until the sync has run.
 
@@ -97,7 +105,7 @@ Admin desk: open `/admin`, enter the admin key from step 2. It is kept only for 
 ```bash
 # A guest opens their link
 curl -s https://<n8n>/webhook/wedding -H 'Content-Type: application/json' \
-  -d '{"action":"invitation","token":"<8-hex-token>"}'
+  -d '{"action":"invitation","token":"<token>"}'
 
 # Admin: list guests (403 without the right key)
 curl -s https://<n8n>/webhook/wedding-admin -H 'Content-Type: application/json' -H 'X-Admin-Key: <key>' \

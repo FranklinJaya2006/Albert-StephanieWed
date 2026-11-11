@@ -113,7 +113,7 @@ function Rsvp({ shown = true, ready = true }: { shown?: boolean; ready?: boolean
       <section className="section welcome">
         <Florals position="tl" />
         <Florals position="tr" />
-        <p className="dear">Dear Mr/Mrs/Ms,</p>
+        <p className="dear">Dear</p>
         <h2 className="guest-name">{invitationInfo?.name ?? guestName ?? "Our Honored Guest"}</h2>
         <Ornament />
         <p className="lead">

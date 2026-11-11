@@ -1403,3 +1403,7 @@ a {
 @media (hover: hover) { .attendance-options button[aria-pressed="false"]:hover { border-color: var(--gold-deep); } }
 .wish-form .button:disabled { opacity: 0.4; cursor: not-allowed; }
 .wish-form .button:disabled:hover { background: transparent; color: var(--ink); }
+
+/* Name and number of guests in the RSVP come from the organiser: shown in grey, not editable. */
+.wish-form input[readonly] { background: #e6e3dc; color: #6b7076; border-color: #d2cec4; cursor: not-allowed; }
+.wish-form input[readonly]:focus { outline: none; box-shadow: none; border-color: #d2cec4; }

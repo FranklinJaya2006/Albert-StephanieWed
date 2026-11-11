@@ -3,11 +3,11 @@
   "nodes": [
     {
       "parameters": {
-        "content": "## Guest list from Google Sheets\n\nType guests in the sheet tab **Guests**: only **name**, **pax** (number of people, also the most the guest can confirm) and **table**. Leave **token**, **link** and **status** empty; this workflow fills them.\n\n**Top row, Sync guest sheet:** new rows get a secret token and are created in the **wedding_guests** Data Table; rows that already have a token update name / pax / table. The sheet then shows each guest's personal link and RSVP / check-in status. Safe to run again. Nothing is ever deleted.\n\nBefore running: attach your Google credential to **Read guest sheet** and **Write back to sheet**, pick the spreadsheet in both, and set the site address in **Settings**.\n\n**Bottom row, Reset test guests:** clears RSVP and check-in of the fixed test guests (token starts with 7e57) so you can try RSVP and scanning again. Real guests are never touched.\n\n**Third row, Export wishes:** copies every Kind Words message from the **wedding_wishes** Data Table into the sheet tab **Kind Words** (columns id, time in UTC, name, message). Run it whenever you like, for example once after the event: already exported wishes are not duplicated.",
+        "content": "## Guest list from Google Sheets\n\nType guests in the sheet tab **Guests**: only **name**, **pax** (number of people, also the most the guest can confirm) and **table**. Leave **token**, **link** and **status** empty; this workflow fills them.\n\n**Top row, Sync guest sheet:** new rows get a secret token and are created in the **wedding_guests** Data Table; rows that already have a token update name / pax / table. The sheet then shows each guest's personal link and RSVP / check-in status. Safe to run again. Nothing is ever deleted. The **Sync webhook** below it does the same from outside n8n: POST to `/webhook/wedding-sync` with a Header Auth credential (header `X-Admin-Key`); it answers at once and syncs in the background. Call it one at a time.\n\nBefore running: attach your Google credential to **Read guest sheet** and **Write back to sheet**, pick the spreadsheet in both, and set the site address in **Settings**.\n\n**Bottom row, Reset test guests:** clears RSVP and check-in of the fixed test guests (token starts with 7e57) so you can try RSVP and scanning again. Real guests are never touched.\n\n**Third row, Export wishes:** copies every Kind Words message from the **wedding_wishes** Data Table into the sheet tab **Kind Words** (columns id, time in UTC, name, message). Run it whenever you like, for example once after the event: already exported wishes are not duplicated.",
         "width": 700,
         "height": 380
       },
-      "id": "ac9d7130-f41d-485a-9d82-63a752f20cc5",
+      "id": "c11042ea-e119-4df9-b8fb-d6553f0bd867",
       "name": "Note 3",
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
@@ -18,7 +18,7 @@
     },
     {
       "parameters": {},
-      "id": "378767eb-cfb7-49c7-a50d-ba8d0f43c6f8",
+      "id": "8eaa0446-3e85-4375-b47f-92f26bd9f3c8",
       "name": "Sync guest sheet",
       "type": "n8n-nodes-base.manualTrigger",
       "typeVersion": 1,
@@ -29,10 +29,28 @@
     },
     {
       "parameters": {
+        "httpMethod": "POST",
+        "path": "wedding-sync",
+        "authentication": "headerAuth",
+        "responseMode": "onReceived",
+        "options": {}
+      },
+      "id": "11c25139-a825-45db-8ed9-4529fb6eb758",
+      "name": "Sync webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -900,
+        200
+      ],
+      "webhookId": "926d3189-7672-4cd5-8343-73363aa38d2b"
+    },
+    {
+      "parameters": {
         "mode": "runOnceForAllItems",
         "jsCode": "// Edit siteUrl: where the invitation website is published. Each guest's link is <siteUrl>/AlbertStephanie/<token>.\nreturn [{ json: { siteUrl: 'https://invitation.loventra.dpdns.org' } }];\n"
       },
-      "id": "2efc4a8a-a8c3-4aba-9adb-fa605410e277",
+      "id": "bd964621-a2d0-406a-9dee-b920f0982823",
       "name": "Settings",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -61,7 +79,7 @@
         },
         "options": {}
       },
-      "id": "837aee92-28b6-40dd-ae68-24af293fcee9",
+      "id": "41b6d820-7e01-4403-8003-24bb3bf9bfe0",
       "name": "Read guest sheet",
       "type": "n8n-nodes-base.googleSheets",
       "typeVersion": 4.7,
@@ -81,7 +99,7 @@
         },
         "returnAll": true
       },
-      "id": "e8014443-e215-4bb0-af02-6db39d7b721c",
+      "id": "08e394c2-657a-4b02-b084-1b67bfe40236",
       "name": "Get guests",
       "type": "n8n-nodes-base.dataTable",
       "typeVersion": 1.1,
@@ -94,9 +112,9 @@
     {
       "parameters": {
         "mode": "runOnceForAllItems",
-        "jsCode": "// Compares the Google Sheet with the wedding_guests Data Table.\n// The sheet owns name, pax (the number of people, also the most the guest may confirm) and table; the Data Table owns RSVP and check-in. A row with no token is a\n// new guest (a token is made for it next); a token the table already knows is an update; a token the table\n// does not know yet (for example the fixed test tokens) creates that guest with exactly that token.\nconst TOKEN = /^(?:[a-f0-9]{8}|[a-f0-9]{64})$/; // 8 hex characters (older 64-hex tokens are fine too)\nconst sheetRows = $('Read guest sheet').all().map((item) => item.json);\nconst known = new Set($input.all().map((item) => item.json).filter((row) => row && row.id !== undefined && row.token).map((row) => row.token));\nconst seen = new Set();\nconst out = [];\nfor (const row of sheetRows) {\n  const name = String(row.name ?? '').trim();\n  if (!name) continue; // empty line in the sheet\n  const pax = Math.floor(Number(row.pax));\n  const base = {\n    row_number: row.row_number,\n    name,\n    max_guests: pax > 0 ? pax : 1,\n    pax: pax > 0 ? pax : 0,\n    table_name: String(row.table ?? '').trim(),\n  };\n  const raw = String(row.token ?? '').trim().toLowerCase();\n  if (raw && !TOKEN.test(raw)) { out.push({ json: { ...base, op: 'bad', reason: 'invalid', rawToken: String(row.token).trim() } }); continue; }\n  if (raw && seen.has(raw)) { out.push({ json: { ...base, op: 'bad', reason: 'duplicate', rawToken: raw } }); continue; }\n  if (raw) seen.add(raw);\n  out.push({ json: { ...base, op: raw && known.has(raw) ? 'update' : 'create', existingToken: raw } });\n}\nreturn out;\n"
+        "jsCode": "// Compares the Google Sheet with the wedding_guests Data Table.\n// The sheet owns name, pax (the number of people, also the most the guest may confirm) and table; the Data Table owns RSVP and check-in. A row with no token is a\n// new guest (a token is made for it next); a token the table already knows is an update; a token the table\n// does not know yet (for example the fixed test tokens) creates that guest with exactly that token.\nconst TOKEN = /^[a-f0-9]{8,64}$/; // 8 to 64 hex characters: 16 now, the older 8- and 64-character ones are fine too\nconst sheetRows = $('Read guest sheet').all().map((item) => item.json);\nconst known = new Set($input.all().map((item) => item.json).filter((row) => row && row.id !== undefined && row.token).map((row) => row.token));\nconst seen = new Set();\nconst out = [];\nfor (const row of sheetRows) {\n  const name = String(row.name ?? '').trim();\n  if (!name) continue; // empty line in the sheet\n  const pax = Math.floor(Number(row.pax));\n  const base = {\n    row_number: row.row_number,\n    name,\n    max_guests: pax > 0 ? pax : 1,\n    pax: pax > 0 ? pax : 0,\n    table_name: String(row.table ?? '').trim(),\n  };\n  const raw = String(row.token ?? '').trim().toLowerCase();\n  if (raw && !TOKEN.test(raw)) { out.push({ json: { ...base, op: 'bad', reason: 'invalid', rawToken: String(row.token).trim() } }); continue; }\n  if (raw && seen.has(raw)) { out.push({ json: { ...base, op: 'bad', reason: 'duplicate', rawToken: raw } }); continue; }\n  if (raw) seen.add(raw);\n  out.push({ json: { ...base, op: raw && known.has(raw) ? 'update' : 'create', existingToken: raw } });\n}\nreturn out;\n"
       },
-      "id": "2909a34e-8c58-498b-bcd7-d10572c4adfa",
+      "id": "d99b30c3-9795-4d48-9f01-ce1963e6677a",
       "name": "Plan sync",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -109,10 +127,10 @@
       "parameters": {
         "action": "generate",
         "encodingType": "hex",
-        "stringLength": 8,
+        "stringLength": 16,
         "dataPropertyName": "token"
       },
-      "id": "034becb5-e1b5-4256-ba03-42a05cd887e0",
+      "id": "a4104fe7-c2fe-4f11-91c8-4fe32d50d7a6",
       "name": "New token",
       "type": "n8n-nodes-base.crypto",
       "typeVersion": 2,
@@ -124,9 +142,9 @@
     {
       "parameters": {
         "mode": "runOnceForAllItems",
-        "jsCode": "// Every item already has a freshly generated token. Keep the sheet's own token when it has one.\n// Short tokens can (rarely) repeat: a new token that is already taken is not used, and the row is told to sync again.\nconst blank = {\n  phone: '', title: '', invite_sent_at: '', rsvp_status: '', rsvp_event: '', rsvp_guests: 0,\n  rsvp_request_key: '', rsvp_at: '', reception_checkin_at: '',\n};\nconst items = $input.all().map((item) => item.json);\nconst taken = new Set($('Get guests').all().map((item) => item.json.token).filter(Boolean));\nfor (const row of items) if (row.existingToken) taken.add(row.existingToken);\nreturn items.map((row) => {\n  if (row.op === 'bad') return { json: row };\n  if (row.existingToken) return { json: { ...blank, ...row, token: row.existingToken } };\n  if (taken.has(row.token)) return { json: { ...row, op: 'bad', reason: 'collision', rawToken: '' } };\n  taken.add(row.token);\n  return { json: { ...blank, ...row } };\n});\n"
+        "jsCode": "// Every item already has a freshly generated token. Keep the sheet's own token when it has one.\n// Short tokens can (rarely) repeat: a new token that is already taken is not used, and the row is told to sync again.\nconst blank = {\n  phone: '', title: '', invite_sent_at: '', rsvp_status: '', rsvp_event: '', rsvp_guests: 0,\n  rsvp_request_key: '', rsvp_at: '', reception_checkin_at: '',\n};\nconst items = $input.all().map((item) => item.json);\n// A new token starts with a letter (a-f): Google Sheets would turn \"00123456\" or \"12e34567\" into a number and the token would break.\nconst letterFirst = (token) => (/^[0-9]/.test(token) ? 'abcdef'[Number(token[0]) % 6] + token.slice(1) : token);\nconst taken = new Set($('Get guests').all().map((item) => item.json.token).filter(Boolean));\nfor (const row of items) if (row.existingToken) taken.add(row.existingToken);\nreturn items.map((row) => {\n  if (row.op === 'bad') return { json: row };\n  if (row.existingToken) return { json: { ...blank, ...row, token: row.existingToken } };\n  const token = letterFirst(row.token);\n  if (taken.has(token)) return { json: { ...row, op: 'bad', reason: 'collision', rawToken: '' } };\n  taken.add(token);\n  return { json: { ...blank, ...row, token } };\n});\n"
       },
-      "id": "5882042c-6ac7-4658-ae82-94c4cf629ab9",
+      "id": "f49f1790-a394-411b-8a93-2dec6fce2f23",
       "name": "Resolve",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -141,7 +159,7 @@
         "numberOutputs": 3,
         "output": "={{ ({ create: 0, update: 1 })[$json.op] ?? 2 }}"
       },
-      "id": "8b601552-4edb-4120-b7df-879fa7d6a539",
+      "id": "6832dc85-cf9b-45fd-aad5-189f32829348",
       "name": "Sync route",
       "type": "n8n-nodes-base.switch",
       "typeVersion": 3.2,
@@ -309,7 +327,7 @@
         },
         "options": {}
       },
-      "id": "0c2a1c7d-34d7-4459-8d14-4fa8b041e646",
+      "id": "1f4e8b83-6df2-4e08-b417-7f7a562e078f",
       "name": "Create guest",
       "type": "n8n-nodes-base.dataTable",
       "typeVersion": 1.1,
@@ -387,7 +405,7 @@
         },
         "options": {}
       },
-      "id": "cdf69a79-9fbd-41e8-97d3-6bbc9e6a6d97",
+      "id": "05b5ea6c-536d-4f5e-8460-4c968fb5aa94",
       "name": "Update guest",
       "type": "n8n-nodes-base.dataTable",
       "typeVersion": 1.1,
@@ -401,7 +419,7 @@
         "mode": "runOnceForAllItems",
         "jsCode": "// What goes back into the sheet for each row: its token, its personal link and where the guest stands.\nconst siteUrl = String($('Settings').first().json.siteUrl).replace(/\\/+$/, '');\nconst plan = $('Resolve').all().map((item) => item.json);\nconst statusOf = (row) => {\n  const parts = [];\n  if (row.rsvp_status === 'yes') parts.push(`Hadir, ${Number(row.rsvp_guests) || 0} orang`);\n  else if (row.rsvp_status === 'no') parts.push('Tidak hadir');\n  else parts.push('Belum RSVP');\n  if (row.reception_checkin_at) parts.push('sudah check-in');\n  return parts.join(' · ');\n};\nconst out = [];\nfor (const { json: row } of $input.all()) {\n  if (row.op === 'bad') {\n    const why = row.reason === 'collision' ? 'Token bentrok: jalankan Sync sekali lagi'\n      : row.reason === 'duplicate' ? 'Token dobel: kosongkan sel token' : 'Token tidak valid: kosongkan sel token';\n    out.push({ json: { row_number: row.row_number, token: row.rawToken, link: '', status: why } });\n    continue;\n  }\n  const planned = plan.find((item) => item.op !== 'bad' && item.token === row.token);\n  if (!planned) continue;\n  out.push({ json: { row_number: planned.row_number, token: row.token, link: `${siteUrl}/AlbertStephanie/${row.token}`, status: statusOf(row) } });\n}\nreturn out;\n"
       },
-      "id": "9c88b939-9ff5-4722-9007-f2d1fd8a2d6f",
+      "id": "25de8319-6d1b-4aeb-a0c0-98c11e6e50d6",
       "name": "Sheet row",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -481,7 +499,7 @@
         },
         "options": {}
       },
-      "id": "7f6cce3a-93bc-4418-9d89-35befdb7d785",
+      "id": "aa0660b7-6c39-4a90-92c5-a4fb35a86fa3",
       "name": "Write back to sheet",
       "type": "n8n-nodes-base.googleSheets",
       "typeVersion": 4.7,
@@ -492,7 +510,7 @@
     },
     {
       "parameters": {},
-      "id": "f0079803-7d1e-47f1-8e0d-dbfd8433cdca",
+      "id": "5a76739e-39e3-4150-82e5-458557c78451",
       "name": "Reset test guests",
       "type": "n8n-nodes-base.manualTrigger",
       "typeVersion": 1,
@@ -512,7 +530,7 @@
         },
         "returnAll": true
       },
-      "id": "e952d914-86ea-4e82-b90c-fbddb50fc278",
+      "id": "53312645-d8e3-4915-986c-f94834162e81",
       "name": "Get guests to reset",
       "type": "n8n-nodes-base.dataTable",
       "typeVersion": 1.1,
@@ -527,7 +545,7 @@
         "mode": "runOnceForAllItems",
         "jsCode": "// The fixed test guests: their token starts with 7e57 (\"test\"). Real guests have random tokens and are never touched.\nconst rows = $input.all()\n  .map((item) => item.json)\n  .filter((row) => row && row.id !== undefined && /^7e57[a-f0-9]{60}$/.test(String(row.token || '')));\nreturn rows.map((row) => ({ json: { rowId: row.id } }));\n"
       },
-      "id": "961572f8-10f5-41b6-bc44-2ad477c35669",
+      "id": "6cf44f2b-e4d1-49d4-aab1-cde31c5874c8",
       "name": "Test guests only",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -635,7 +653,7 @@
         },
         "options": {}
       },
-      "id": "792f2818-8ec9-407a-a55f-b188dd33a38c",
+      "id": "2fddc29f-58a6-46fe-b351-0ce51c0b827f",
       "name": "Clear RSVP and check-in",
       "type": "n8n-nodes-base.dataTable",
       "typeVersion": 1.1,
@@ -646,7 +664,7 @@
     },
     {
       "parameters": {},
-      "id": "06a28674-0001-40e3-acb3-808705b3c3d0",
+      "id": "642e527f-8b96-4ded-8d5c-1aafcd3040bf",
       "name": "Export wishes",
       "type": "n8n-nodes-base.manualTrigger",
       "typeVersion": 1,
@@ -666,7 +684,7 @@
         },
         "returnAll": true
       },
-      "id": "b89be0b3-b490-4313-a5c3-116258702e4e",
+      "id": "439b92a5-d151-4d4e-a2e3-708be6200d57",
       "name": "Get wishes to export",
       "type": "n8n-nodes-base.dataTable",
       "typeVersion": 1.1,
@@ -681,7 +699,7 @@
         "mode": "runOnceForAllItems",
         "jsCode": "// Kind Words from the wedding_wishes Data Table, one row per wish, oldest first. The time is UTC.\nconst rows = $input.all()\n  .map((item) => item.json)\n  .filter((row) => row && row.id !== undefined && String(row.message || '').trim());\nrows.sort((a, b) => Number(a.id) - Number(b.id));\nreturn rows.map((row) => ({\n  json: { id: String(row.id), time: String(row.createdAt || '').replace('T', ' ').slice(0, 19), name: row.name || '', message: row.message },\n}));\n"
       },
-      "id": "5148e780-83a8-4a61-a3fd-3181e9c4f84b",
+      "id": "c344c687-c41c-402d-a989-91c6c0ca9669",
       "name": "Wish rows",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -759,7 +777,7 @@
         },
         "options": {}
       },
-      "id": "c1c58de6-c9ea-4c20-b36d-4e72c242a8e5",
+      "id": "8bb3a1b1-7268-457a-9b44-de047942e73a",
       "name": "Write wishes to sheet",
       "type": "n8n-nodes-base.googleSheets",
       "typeVersion": 4.7,
@@ -772,6 +790,17 @@
   "pinData": {},
   "connections": {
     "Sync guest sheet": {
+      "main": [
+        [
+          {
+            "node": "Settings",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sync webhook": {
       "main": [
         [
           {
@@ -977,7 +1006,7 @@
   "settings": {
     "executionOrder": "v1"
   },
-  "versionId": "bd563782-6324-410f-b1a2-33d123971f79",
+  "versionId": "32f7fc0c-fe38-444e-b354-798dda1701dd",
   "meta": {
     "templateCredsSetupCompleted": false
   },
