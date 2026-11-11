@@ -6,7 +6,7 @@ The guest list, RSVPs, QR check-ins and wishes live in **n8n Data Tables**. Two 
 | --- | --- | --- | --- |
 | **Wedding - Send Invitations** | `workflows/wedding-send-invitations.json` | you, with *Execute workflow* | Sends each guest their own link over WhatsApp (WAHA) and marks them as sent |
 | **Wedding - Guest API** | `workflows/wedding-guest-api.json` | the website and the admin desk (webhooks) | Invitation lookup, RSVP, access card, wishes, admin guest list, QR check-in |
-| **Wedding - Guest Sheet** | `workflows/wedding-guest-sheet.json` | you, with *Sync guest sheet* / *Reset test guests* | Reads your Google Sheet guest list into the Data Table, makes each guest's token, writes the personal link and RSVP status back to the sheet; resets the test guests |
+| **Wedding - Guest Sheet** | `workflows/wedding-guest-sheet.json` | you, with *Sync guest sheet* / *Reset test guests* / *Export wishes* | Reads your Google Sheet guest list into the Data Table, makes each guest's token, writes the personal link and RSVP status back to the sheet; resets the test guests; copies the Kind Words wishes into the sheet |
 
 ```text
 Data Table wedding_guests ──► Send Invitations ──► WAHA ──► guest's WhatsApp (their own /AlbertStephanie/<token> link)
@@ -17,7 +17,7 @@ Data Table wedding_guests ──► Send Invitations ──► WAHA ──► gu
                             └── admin desk: add guests, scan QR, guest list
 ```
 
-Each guest has one row. Their **`token`** (64 random hex characters) is the personal id: it is in their link, and it is the secret inside their QR. The QR holds no name.
+Each guest has one row. Their **`token`** (8 random hex characters, e.g. `3fa91c07`; older 64-character tokens still work) is the personal id: it is in their link, and it is the secret inside their QR. The QR holds no name.
 
 ## 1. Create the Data Tables
 
@@ -33,35 +33,36 @@ In n8n: **Data tables → Create**. Names and columns must match exactly (`id`, 
 | `max_guests` | number | you / admin desk (1–5): the most the guest may confirm |
 | `pax` | number | you / admin desk (optional): the seats you assign; printed on the access card as "N pax". Empty or 0 means the card shows the RSVP count |
 | `table_name` | string | you / admin desk (optional): printed on the access card and shown to the usher when the QR is scanned |
-| `token` | string | admin desk creates it; if you add rows by hand, paste 64 random hex characters (see below) |
+| `token` | string | admin desk creates it; if you add rows by hand, leave it empty and run the sheet sync, or type 8 random hex characters (0-9, a-f) |
 | `invite_sent_at` | string | Send Invitations |
 | `rsvp_status` | string | Guest API (`yes` / `no`) |
 | `rsvp_event` | string | Guest API (`ceremony` / `reception` / `both`) |
 | `rsvp_guests` | number | Guest API |
 | `rsvp_request_key` | string | Guest API |
 | `rsvp_at` | string | Guest API |
-| `ceremony_checkin_at` | string | Guest API (QR scan) |
 | `reception_checkin_at` | string | Guest API (QR scan) |
 
 **`wedding_wishes`**: `request_key` (string), `name` (string), `message` (string).
 
 Already created the table? Just add the two columns `pax` (number) and `table_name` (string); existing rows stay valid. Fill them in the Data Table at any time: the card reads them live.
 
-**Guest list in Google Sheets (no phone numbers needed):** upload [`wedding-guest-list-template.xlsx`](wedding-guest-list-template.xlsx) to Google Drive and open it as a Google Sheet (keep the tab named `Guests`). You only type `name`, `guests` (most people they may bring), `pax` (seats) and `table` (the wedding is the Reception only, so there is no event column); `token`, `link` and `status` are filled by n8n. Import **Wedding - Guest Sheet**, attach your Google credential to **Read guest sheet** and **Write back to sheet**, pick the spreadsheet in both, set `siteUrl` in **Settings**, then click **Sync guest sheet**:
+**Guest list in Google Sheets (no phone numbers needed):** upload [`wedding-guest-list-template.xlsx`](wedding-guest-list-template.xlsx) to Google Drive and open it as a Google Sheet (keep the tab named `Guests`). You only type `name`, `pax` (how many people the invitation is for: the RSVP does not ask the guest, it confirms exactly this number, and the access card shows it) and `table` (there is no event column: the RSVP is just "will attend" and the QR is for the Reception); `token`, `link` and `status` are filled by n8n. Import **Wedding - Guest Sheet**, attach your Google credential to **Read guest sheet** and **Write back to sheet**, pick the spreadsheet in both, set `siteUrl` in **Settings**, then click **Sync guest sheet**:
 - a row with no token becomes a new guest with a random token; its link appears in the sheet,
-- a row whose token is known updates name / guests / pax / table only (RSVP and check-in are never overwritten),
+- a row whose token is known updates name / pax / table only (the Data Table `max_guests` and `pax` both get the sheet's `pax`; an empty `pax` means 1) (RSVP and check-in are never overwritten),
 - a malformed or repeated token is reported in `status` and skipped; a blank line is ignored; nothing is ever deleted (deleting a sheet row does not delete the guest: remove it in the Data Table),
 - `status` shows Belum RSVP / Hadir, n orang / Tidak hadir, plus "sudah check-in", as of the last sync.
-Optional: to see each token in the sheet the moment you type a name (before any sync), paste [`google-sheet-tokens.gs`](google-sheet-tokens.gs) into the sheet's Apps Script (Extensions > Apps Script). It writes a random 64-hex token once into the empty `token` cells; the sync then just creates that guest with that token. Don't use a `RANDBETWEEN` formula instead: formulas recalculate and would change every guest's link.
-Run it again whenever you add guests or want fresh statuses. Rows without a token are ignored by every other workflow until the sync has run.
+Optional: to see each token in the sheet the moment you type a name (before any sync), paste [`Code.gs`](Code.gs) into the sheet's Apps Script (Extensions > Apps Script, the default file is already called Code.gs: replace its content). It writes a random 8-hex token once into the empty `token` cells; the sync then just creates that guest with that token. Don't use a `RANDBETWEEN` formula instead: formulas recalculate and would change every guest's link.
+Run it again whenever you add guests or want fresh statuses.
+
+**Kind Words.** The website's Kind Words form and list already go through n8n: the form calls the Guest API webhook (`wish-add`), the list reads `wishes-list`, and every wish is a row in the Data Table `wedding_wishes` (nothing is stored on the website or the VPS). To get them into a spreadsheet, run **Export wishes** in the same workflow: it writes every wish to the sheet tab `Kind Words` (columns `id`, `time` in UTC, `name`, `message`), oldest first. Run it once after the event (or any time): it matches on `id`, so wishes already exported are updated, never duplicated. In the same Google Sheet use *File > Download* to get an .xlsx or .csv. Rows without a token are ignored by every other workflow until the sync has run.
 
 **Test guests.** The template has three fixed test guests (token starts with `7e57`). After the first sync they exist in the Data Table:
 
 | Guest | Invitation link | QR text to paste in the admin scanner |
 | --- | --- | --- |
-| TEST 1 (2 guests, Meja Tes) | `/AlbertStephanie/7e57000000000000000000000000000000000000000000000000000000000001` | `ASW:v1:7e57000000000000000000000000000000000000000000000000000000000001:reception` |
-| TEST 2 (3 guests, Meja Tes) | `/AlbertStephanie/7e57000000000000000000000000000000000000000000000000000000000002` | `ASW:v1:7e57000000000000000000000000000000000000000000000000000000000002:reception` |
-| TEST 3 (1 guest) | `/AlbertStephanie/7e57000000000000000000000000000000000000000000000000000000000003` | `ASW:v1:7e57000000000000000000000000000000000000000000000000000000000003:reception` |
+| TEST 1 (pax 2, Meja Tes) | `/AlbertStephanie/7e57000000000000000000000000000000000000000000000000000000000001` | `ASW:v1:7e57000000000000000000000000000000000000000000000000000000000001:reception` |
+| TEST 2 (pax 3, Meja Tes) | `/AlbertStephanie/7e57000000000000000000000000000000000000000000000000000000000002` | `ASW:v1:7e57000000000000000000000000000000000000000000000000000000000002:reception` |
+| TEST 3 (pax 1) | `/AlbertStephanie/7e57000000000000000000000000000000000000000000000000000000000003` | `ASW:v1:7e57000000000000000000000000000000000000000000000000000000000003:reception` |
 
 RSVP is never closed (the site and API have no deadline). It is one-time per link, so after trying one, run **Reset test guests** in the same workflow: it clears RSVP and check-in of the `7e57…` guests only, and you can RSVP and scan again. The QR is only valid after that guest has RSVPed yes for that event. Wishes the testers post stay in `wedding_wishes`: delete those rows by hand. The test tokens are public in this repo, so delete the TEST rows (sheet and Data Table) before sending real invitations.
 
@@ -96,7 +97,7 @@ Admin desk: open `/admin`, enter the admin key from step 2. It is kept only for 
 ```bash
 # A guest opens their link
 curl -s https://<n8n>/webhook/wedding -H 'Content-Type: application/json' \
-  -d '{"action":"invitation","token":"<64-hex-token>"}'
+  -d '{"action":"invitation","token":"<8-hex-token>"}'
 
 # Admin: list guests (403 without the right key)
 curl -s https://<n8n>/webhook/wedding-admin -H 'Content-Type: application/json' -H 'X-Admin-Key: <key>' \

@@ -7,7 +7,7 @@
         "width": 640,
         "height": 330
       },
-      "id": "4765ffb8-87a0-49e1-b23b-fa3a5a018dbe",
+      "id": "01fed005-80d3-4250-ac88-ae81e51b881d",
       "name": "Note 2",
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
@@ -25,7 +25,7 @@
           "allowedOrigins": "*"
         }
       },
-      "id": "88bb14f8-2cdc-414e-a8ba-5ad700aa0ffd",
+      "id": "cde10e0e-22c0-4dbe-bb0f-c111fd0f8638",
       "name": "Public API",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2.1,
@@ -33,7 +33,7 @@
         -900,
         40
       ],
-      "webhookId": "3afd0b16-68b6-4703-8177-ea7e4e958883"
+      "webhookId": "04a9f60f-657f-477d-a533-7f1b76811aad"
     },
     {
       "parameters": {
@@ -45,7 +45,7 @@
           "allowedOrigins": "*"
         }
       },
-      "id": "4fc710a4-9b82-4346-866f-d168bd76e729",
+      "id": "546a4b4c-b7e4-4c5e-9a9a-324a2f74bf9c",
       "name": "Admin API",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2.1,
@@ -53,14 +53,14 @@
         -900,
         260
       ],
-      "webhookId": "b6e11fdb-11ee-43c5-8b27-2200c9f74456"
+      "webhookId": "c56682f7-47a2-4934-b018-5075369c7469"
     },
     {
       "parameters": {
         "mode": "runOnceForAllItems",
         "jsCode": "// Marks the request as coming from the public webhook (no admin key was checked).\nconst request = $input.first().json;\nreturn [{ json: { scope: 'public', body: request.body ?? {} } }];\n"
       },
-      "id": "5d3af89a-31d7-4a48-a426-39386d2a651c",
+      "id": "c5007ed0-793b-4165-b74e-349f283c0a51",
       "name": "Tag public",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -74,7 +74,7 @@
         "mode": "runOnceForAllItems",
         "jsCode": "// Marks the request as admin. The admin webhook uses Header Auth, so n8n has already rejected\n// any request without the right X-Admin-Key before this node runs.\nconst request = $input.first().json;\nreturn [{ json: { scope: 'admin', body: request.body ?? {} } }];\n"
       },
-      "id": "a14275ff-6fc0-435a-a21e-262ce96933cb",
+      "id": "c006a56c-eb16-46eb-87e9-9211ca89f755",
       "name": "Tag admin",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -87,10 +87,10 @@
       "parameters": {
         "action": "generate",
         "encodingType": "hex",
-        "stringLength": 64,
+        "stringLength": 8,
         "dataPropertyName": "token"
       },
-      "id": "0677e6f4-6cc7-43ab-98f9-ac99280a8aa0",
+      "id": "20871510-59c2-4f03-9440-aa529e1a0baa",
       "name": "New token",
       "type": "n8n-nodes-base.crypto",
       "typeVersion": 2,
@@ -105,7 +105,7 @@
         "numberOutputs": 3,
         "output": "={{ $json.scope === 'admin' && $json.body.action === 'admin-check' ? 2 : String($json.body.action ?? '').startsWith('wish') ? 1 : 0 }}"
       },
-      "id": "01375056-56dc-4f13-a001-c459fe1c0fe3",
+      "id": "ac70091f-8cac-48e3-8ae8-35741991a813",
       "name": "Which table?",
       "type": "n8n-nodes-base.switch",
       "typeVersion": 3.2,
@@ -119,7 +119,7 @@
         "mode": "runOnceForAllItems",
         "jsCode": "// Login check only. The admin webhook's Header Auth already rejected a wrong X-Admin-Key, so reaching\n// this node means the key is right. No Data Table is read: signing in must not depend on the guest list.\nreturn [{ json: { status: 200, body: { ok: true }, write: null } }];\n"
       },
-      "id": "064c9b24-44b9-4c9f-84a5-d8de1b328673",
+      "id": "4b1c26cc-b863-4b4e-b9de-e63041fb1cf9",
       "name": "Admin check ok",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -139,7 +139,7 @@
         },
         "returnAll": true
       },
-      "id": "21875410-2be0-4abb-ada4-7ceefde00c38",
+      "id": "994d5f39-0d48-467d-bb5b-4765c5b01232",
       "name": "Get guests",
       "type": "n8n-nodes-base.dataTable",
       "typeVersion": 1.1,
@@ -152,9 +152,9 @@
     {
       "parameters": {
         "mode": "runOnceForAllItems",
-        "jsCode": "// Every guest-side rule of the invitation API lives here: invitation lookup, RSVP, access card,\n// admin guest list, and QR check-in. It returns { status, body, write }; `write` (if any) tells\n// the next nodes which Data Table row to save.\nconst request = $('New token').first().json;\nconst { scope, body } = request;\nconst newToken = request.token ?? request.data;\nconst rows = $input.all().map((item) => item.json).filter((row) => row && row.id !== undefined && row.token);\n\nconst HEX64 = /^[a-f0-9]{64}$/;\nconst now = new Date().toISOString();\nconst reply = (status, payload, write = null) => [{ json: { status, body: payload, write } }];\nconst fail = (status, message) => reply(status, { error: message });\nconst hasRsvp = (row) => row.rsvp_status === 'yes' || row.rsvp_status === 'no';\nconst reservation = (row) => ({\n  id: `R${row.id}`,\n  token: row.token,\n  name: row.name,\n  attending: row.rsvp_status,\n  event: row.rsvp_event || '',\n  guests: Number(row.rsvp_guests) || 0,\n  createdAt: row.rsvp_at,\n  pax: Number(row.pax) > 0 ? Number(row.pax) : null, // seats the organiser assigned (empty = use the RSVP count)\n  table: row.table_name || '',\n});\nconst byToken = (value) => (typeof value === 'string' && HEX64.test(value) ? rows.find((row) => row.token === value) : undefined);\n\nconst action = typeof body.action === 'string' ? body.action : '';\nconst ADMIN_ONLY = ['admin-check', 'admin-guests', 'admin-add-guest', 'admin-reservations', 'checkin'];\nif (ADMIN_ONLY.includes(action) && scope !== 'admin') return fail(403, 'Admin access required.');\n\nswitch (action) {\n  // ---- Public: the guest opens their personal link ----\n  case 'invitation': {\n    const guest = byToken(body.token);\n    if (!guest) return fail(404, 'Invitation not found. Please use the personal link sent by the organizer.');\n    return reply(200, {\n      name: guest.name,\n      maxGuests: Number(guest.max_guests) || 1,\n      reservation: hasRsvp(guest) ? reservation(guest) : null,\n    });\n  }\n\n  // ---- Public: the guest reopens their access card ----\n  case 'reservation': {\n    const guest = byToken(body.token);\n    if (!guest || !hasRsvp(guest)) return fail(404, 'Reservation not found. Please use your access card link.');\n    return reply(200, reservation(guest));\n  }\n\n  // ---- Public: the guest sends their RSVP (once per invitation) ----\n  case 'rsvp': {\n    const { attending, requestKey } = body;\n    if (!['yes', 'no'].includes(attending) || typeof requestKey !== 'string' || !/^[\\w-]{16,100}$/.test(requestKey)) {\n      return fail(400, 'Please enter a valid name and attendance.');\n    }\n    const guest = byToken(body.invitationToken);\n    if (!guest) return fail(403, 'Please use your personal invitation link to confirm your attendance.');\n    // One RSVP per invitation: reopening or resubmitting returns the original.\n    if (hasRsvp(guest)) return reply(200, reservation(guest));\n    const event = attending === 'yes' ? body.event : '';\n    const guests = attending === 'yes' ? body.guests : 0;\n    if (attending === 'yes' && (!['ceremony', 'reception', 'both'].includes(event) || !Number.isInteger(guests) || guests < 1 || guests > 5)) {\n      return fail(400, 'Choose an event and between 1 and 5 guests.');\n    }\n    const max = Number(guest.max_guests) || 1;\n    if (guests > max) return fail(400, `This invitation allows up to ${max} guests.`);\n    const columns = { rsvp_status: attending, rsvp_event: event, rsvp_guests: guests, rsvp_request_key: requestKey, rsvp_at: now };\n    return reply(201, reservation({ ...guest, ...columns }), { op: 'rsvp', id: guest.id, columns });\n  }\n\n  // ---- Admin ----\n  case 'admin-check':\n    return reply(200, { ok: true });\n\n  case 'admin-guests': {\n    const list = [...rows]\n      .sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt)) || Number(b.id) - Number(a.id))\n      .slice(0, 100)\n      .map((row) => ({\n        id: String(row.id),\n        token: row.token,\n        name: row.name,\n        maxGuests: Number(row.max_guests) || 1,\n        createdAt: row.createdAt,\n        reservationId: hasRsvp(row) ? `R${row.id}` : null,\n        phone: row.phone || '',\n        inviteSentAt: row.invite_sent_at || null,\n        pax: Number(row.pax) > 0 ? Number(row.pax) : null,\n        table: row.table_name || '',\n      }));\n    return reply(200, list);\n  }\n\n  case 'admin-add-guest': {\n    const name = typeof body.name === 'string' ? body.name.trim() : '';\n    const phone = typeof body.phone === 'string' ? body.phone.trim() : '';\n    const maxGuests = body.maxGuests;\n    const table = typeof body.table === 'string' ? body.table.trim() : '';\n    const pax = body.pax === undefined || body.pax === null || body.pax === '' ? null : body.pax;\n    if (!name || name.length > 120 || phone.length > 30 || !Number.isInteger(maxGuests) || maxGuests < 1 || maxGuests > 5) {\n      return fail(400, 'Enter a guest name and a party limit between 1 and 5.');\n    }\n    if (table.length > 60 || (pax !== null && (!Number.isInteger(pax) || pax < 1 || pax > 20))) {\n      return fail(400, 'Pax must be between 1 and 20, and the table name at most 60 characters.');\n    }\n    if (!HEX64.test(newToken ?? '')) return fail(500, 'Could not create a secure link. Please try again.');\n    const columns = {\n      name, phone, title: '', max_guests: maxGuests, pax: pax ?? 0, table_name: table, token: newToken, invite_sent_at: '',\n      rsvp_status: '', rsvp_event: '', rsvp_guests: 0, rsvp_request_key: '', rsvp_at: '',\n      ceremony_checkin_at: '', reception_checkin_at: '',\n    };\n    return reply(201, { id: '', token: newToken, name, maxGuests, createdAt: now, reservationId: null, pax, table }, { op: 'add', columns });\n  }\n\n  case 'admin-reservations': {\n    const search = typeof body.search === 'string' ? body.search.trim().toLowerCase() : '';\n    const event = body.event ?? 'all';\n    const attendance = body.attendance ?? 'all';\n    const status = body.status ?? 'all';\n    const date = body.date ?? '';\n    const page = Number(body.page ?? 1);\n    if (!Number.isInteger(page) || page < 1 || search.length > 120\n      || !['all', 'ceremony', 'reception'].includes(event)\n      || !['all', 'yes', 'no'].includes(attendance)\n      || !['all', 'checked-in', 'not-checked-in'].includes(status)\n      || (date && !/^\\d{4}-\\d{2}-\\d{2}$/.test(date))) {\n      return fail(400, 'Invalid filters.');\n    }\n    const answered = rows.filter(hasRsvp);\n    const scanned = (row, which) => (which === 'ceremony' ? row.ceremony_checkin_at : row.reception_checkin_at);\n    const matching = answered\n      .filter((row) => {\n        if (search && !String(row.name).toLowerCase().includes(search) && !`R${row.id}`.toLowerCase().includes(search)) return false;\n        if (event !== 'all' && row.rsvp_event !== event && row.rsvp_event !== 'both') return false;\n        if (attendance !== 'all' && row.rsvp_status !== attendance) return false;\n        if (date && String(row.rsvp_at).slice(0, 10) !== date) return false;\n        if (status !== 'all') {\n          const seen = event === 'all' ? Boolean(row.ceremony_checkin_at || row.reception_checkin_at) : Boolean(scanned(row, event));\n          if ((status === 'checked-in') !== seen) return false;\n        }\n        return true;\n      })\n      .sort((a, b) => String(b.rsvp_at).localeCompare(String(a.rsvp_at)) || Number(b.id) - Number(a.id));\n    const entries = matching.slice((page - 1) * 30, page * 30).map((row) => ({\n      id: `R${row.id}`,\n      name: row.name,\n      attending: row.rsvp_status,\n      event: row.rsvp_event || '',\n      guests: Number(row.rsvp_guests) || 0,\n      createdAt: row.rsvp_at,\n      ceremonyScannedAt: row.ceremony_checkin_at || null,\n      receptionScannedAt: row.reception_checkin_at || null,\n      pax: Number(row.pax) > 0 ? Number(row.pax) : null,\n      table: row.table_name || '',\n    }));\n    let checkedInCards = 0;\n    let admittedGuests = 0;\n    for (const row of answered) {\n      for (const which of ['ceremony', 'reception']) {\n        if (scanned(row, which)) { checkedInCards += 1; admittedGuests += Number(row.rsvp_guests) || 0; }\n      }\n    }\n    const expectedGuests = answered.reduce((sum, row) => sum + (row.rsvp_status === 'yes' ? Number(row.rsvp_guests) || 0 : 0), 0);\n    return reply(200, {\n      entries,\n      total: matching.length,\n      page,\n      pageSize: 30,\n      summary: { reservations: answered.length, expectedGuests, checkedInCards, admittedGuests },\n    });\n  }\n\n  // ---- Admin: the entrance scans a QR card ----\n  case 'checkin': {\n    const match = typeof body.qr === 'string' && /^ASW:v1:([a-f0-9]{64}):(ceremony|reception)$/.exec(body.qr.trim());\n    if (!match) return fail(400, 'Invalid QR code. Please use a newly issued entrance access card.');\n    const event = match[2];\n    if (body.event !== event) return fail(400, 'This card is for a different event. Select the correct entrance or ask for the other card.');\n    const guest = byToken(match[1]);\n    if (!guest || guest.rsvp_status !== 'yes' || (guest.rsvp_event !== 'both' && guest.rsvp_event !== event)) {\n      return fail(403, 'This access card is not valid for admission.');\n    }\n    const field = `${event}_checkin_at`;\n    const person = {\n      id: `R${guest.id}`,\n      name: guest.name,\n      guests: Number(guest.rsvp_guests) || 0,\n      pax: Number(guest.pax) > 0 ? Number(guest.pax) : null,\n      table: guest.table_name || '',\n    };\n    if (guest[field]) return reply(200, { duplicate: true, reservation: person, event, scannedAt: guest[field] });\n    const columns = {\n      ceremony_checkin_at: guest.ceremony_checkin_at || '',\n      reception_checkin_at: guest.reception_checkin_at || '',\n      [field]: now,\n    };\n    return reply(200, { duplicate: false, reservation: person, event, scannedAt: now }, { op: 'checkin', id: guest.id, columns });\n  }\n\n  default:\n    return fail(400, 'Unknown request.');\n}\n"
+        "jsCode": "// Every guest-side rule of the invitation API lives here: invitation lookup, RSVP, access card,\n// admin guest list, and QR check-in. It returns { status, body, write }; `write` (if any) tells\n// the next nodes which Data Table row to save.\nconst request = $('New token').first().json;\nconst { scope, body } = request;\nconst newToken = request.token ?? request.data;\nconst rows = $input.all().map((item) => item.json).filter((row) => row && row.id !== undefined && row.token);\n\nconst TOKEN = /^(?:[a-f0-9]{8}|[a-f0-9]{64})$/; // new links use 8 hex characters; older 64-hex ones still work\nconst now = new Date().toISOString();\nconst reply = (status, payload, write = null) => [{ json: { status, body: payload, write } }];\nconst fail = (status, message) => reply(status, { error: message });\nconst hasRsvp = (row) => row.rsvp_status === 'yes' || row.rsvp_status === 'no';\nconst reservation = (row) => ({\n  id: `R${row.id}`,\n  token: row.token,\n  name: row.name,\n  attending: row.rsvp_status,\n  event: row.rsvp_event || '',\n  guests: Number(row.rsvp_guests) || 0,\n  createdAt: row.rsvp_at,\n  pax: Number(row.pax) > 0 ? Number(row.pax) : null, // seats the organiser assigned (empty = use the RSVP count)\n  table: row.table_name || '',\n});\nconst byToken = (value) => (typeof value === 'string' && TOKEN.test(value) ? rows.find((row) => row.token === value) : undefined);\n\nconst action = typeof body.action === 'string' ? body.action : '';\nconst ADMIN_ONLY = ['admin-check', 'admin-guests', 'admin-add-guest', 'admin-reservations', 'checkin'];\nif (ADMIN_ONLY.includes(action) && scope !== 'admin') return fail(403, 'Admin access required.');\n\nswitch (action) {\n  // ---- Public: the guest opens their personal link ----\n  case 'invitation': {\n    const guest = byToken(body.token);\n    if (!guest) return fail(404, 'Invitation not found. Please use the personal link sent by the organizer.');\n    return reply(200, {\n      name: guest.name,\n      maxGuests: Number(guest.max_guests) || 1,\n      reservation: hasRsvp(guest) ? reservation(guest) : null,\n    });\n  }\n\n  // ---- Public: the guest reopens their access card ----\n  case 'reservation': {\n    const guest = byToken(body.token);\n    if (!guest || !hasRsvp(guest)) return fail(404, 'Reservation not found. Please use your access card link.');\n    return reply(200, reservation(guest));\n  }\n\n  // ---- Public: the guest sends their RSVP (once per invitation) ----\n  case 'rsvp': {\n    const { attending, requestKey } = body;\n    if (!['yes', 'no'].includes(attending) || typeof requestKey !== 'string' || !/^[\\w-]{16,100}$/.test(requestKey)) {\n      return fail(400, 'Please enter a valid name and attendance.');\n    }\n    const guest = byToken(body.invitationToken);\n    if (!guest) return fail(403, 'Please use your personal invitation link to confirm your attendance.');\n    // One RSVP per invitation: reopening or resubmitting returns the original.\n    if (hasRsvp(guest)) return reply(200, reservation(guest));\n    const event = attending === 'yes' ? body.event : '';\n    if (attending === 'yes' && event !== 'reception') return fail(400, 'Choose an event.');\n    // The party size is whatever the organiser set for this invitation (pax); the guest is not asked.\n    const guests = attending === 'yes' ? Number(guest.max_guests) || 1 : 0;\n    const columns = { rsvp_status: attending, rsvp_event: event, rsvp_guests: guests, rsvp_request_key: requestKey, rsvp_at: now };\n    return reply(201, reservation({ ...guest, ...columns }), { op: 'rsvp', id: guest.id, columns });\n  }\n\n  // ---- Admin ----\n  case 'admin-check':\n    return reply(200, { ok: true });\n\n  case 'admin-guests': {\n    const list = [...rows]\n      .sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt)) || Number(b.id) - Number(a.id))\n      .slice(0, 100)\n      .map((row) => ({\n        id: String(row.id),\n        token: row.token,\n        name: row.name,\n        maxGuests: Number(row.max_guests) || 1,\n        createdAt: row.createdAt,\n        reservationId: hasRsvp(row) ? `R${row.id}` : null,\n        phone: row.phone || '',\n        inviteSentAt: row.invite_sent_at || null,\n        pax: Number(row.pax) > 0 ? Number(row.pax) : null,\n        table: row.table_name || '',\n      }));\n    return reply(200, list);\n  }\n\n  case 'admin-add-guest': {\n    const name = typeof body.name === 'string' ? body.name.trim() : '';\n    const phone = typeof body.phone === 'string' ? body.phone.trim() : '';\n    const maxGuests = body.maxGuests;\n    const table = typeof body.table === 'string' ? body.table.trim() : '';\n    const pax = body.pax === undefined || body.pax === null || body.pax === '' ? null : body.pax;\n    if (!name || name.length > 120 || phone.length > 30 || !Number.isInteger(maxGuests) || maxGuests < 1 || maxGuests > 5) {\n      return fail(400, 'Enter a guest name and a party limit between 1 and 5.');\n    }\n    if (table.length > 60 || (pax !== null && (!Number.isInteger(pax) || pax < 1 || pax > 20))) {\n      return fail(400, 'Pax must be between 1 and 20, and the table name at most 60 characters.');\n    }\n    if (!TOKEN.test(newToken ?? '') || rows.some((row) => row.token === newToken)) return fail(500, 'Could not create a secure link. Please try again.');\n    const columns = {\n      name, phone, title: '', max_guests: maxGuests, pax: pax ?? 0, table_name: table, token: newToken, invite_sent_at: '',\n      rsvp_status: '', rsvp_event: '', rsvp_guests: 0, rsvp_request_key: '', rsvp_at: '',\n      reception_checkin_at: '',\n    };\n    return reply(201, { id: '', token: newToken, name, maxGuests, createdAt: now, reservationId: null, pax, table }, { op: 'add', columns });\n  }\n\n  case 'admin-reservations': {\n    const search = typeof body.search === 'string' ? body.search.trim().toLowerCase() : '';\n    const event = body.event ?? 'all';\n    const attendance = body.attendance ?? 'all';\n    const status = body.status ?? 'all';\n    const date = body.date ?? '';\n    const page = Number(body.page ?? 1);\n    if (!Number.isInteger(page) || page < 1 || search.length > 120\n      || !['all', 'reception'].includes(event)\n      || !['all', 'yes', 'no'].includes(attendance)\n      || !['all', 'checked-in', 'not-checked-in'].includes(status)\n      || (date && !/^\\d{4}-\\d{2}-\\d{2}$/.test(date))) {\n      return fail(400, 'Invalid filters.');\n    }\n    const answered = rows.filter(hasRsvp);\n    const matching = answered\n      .filter((row) => {\n        if (search && !String(row.name).toLowerCase().includes(search) && !`R${row.id}`.toLowerCase().includes(search)) return false;\n        if (event !== 'all' && row.rsvp_event !== event && row.rsvp_event !== 'both') return false;\n        if (attendance !== 'all' && row.rsvp_status !== attendance) return false;\n        if (date && String(row.rsvp_at).slice(0, 10) !== date) return false;\n        if (status !== 'all') {\n          const seen = Boolean(row.reception_checkin_at);\n          if ((status === 'checked-in') !== seen) return false;\n        }\n        return true;\n      })\n      .sort((a, b) => String(b.rsvp_at).localeCompare(String(a.rsvp_at)) || Number(b.id) - Number(a.id));\n    const entries = matching.slice((page - 1) * 30, page * 30).map((row) => ({\n      id: `R${row.id}`,\n      name: row.name,\n      attending: row.rsvp_status,\n      event: row.rsvp_event || '',\n      guests: Number(row.rsvp_guests) || 0,\n      createdAt: row.rsvp_at,\n      receptionScannedAt: row.reception_checkin_at || null,\n      pax: Number(row.pax) > 0 ? Number(row.pax) : null,\n      table: row.table_name || '',\n    }));\n    let checkedInCards = 0;\n    let admittedGuests = 0;\n    for (const row of answered) {\n      if (row.reception_checkin_at) { checkedInCards += 1; admittedGuests += Number(row.rsvp_guests) || 0; }\n    }\n    const expectedGuests = answered.reduce((sum, row) => sum + (row.rsvp_status === 'yes' ? Number(row.rsvp_guests) || 0 : 0), 0);\n    return reply(200, {\n      entries,\n      total: matching.length,\n      page,\n      pageSize: 30,\n      summary: { reservations: answered.length, expectedGuests, checkedInCards, admittedGuests },\n    });\n  }\n\n  // ---- Admin: the entrance scans a QR card ----\n  case 'checkin': {\n    const match = typeof body.qr === 'string' && /^ASW:v1:([a-f0-9]{8}|[a-f0-9]{64}):(reception)$/.exec(body.qr.trim());\n    if (!match) return fail(400, 'Invalid QR code. Please use a newly issued entrance access card.');\n    const event = match[2];\n    if (body.event !== event) return fail(400, 'This card is for a different event. Select the correct entrance or ask for the other card.');\n    const guest = byToken(match[1]);\n    if (!guest || guest.rsvp_status !== 'yes' || (guest.rsvp_event !== 'both' && guest.rsvp_event !== event)) {\n      return fail(403, 'This access card is not valid for admission.');\n    }\n    const field = `${event}_checkin_at`;\n    const person = {\n      id: `R${guest.id}`,\n      name: guest.name,\n      guests: Number(guest.rsvp_guests) || 0,\n      pax: Number(guest.pax) > 0 ? Number(guest.pax) : null,\n      table: guest.table_name || '',\n    };\n    if (guest[field]) return reply(200, { duplicate: true, reservation: person, event, scannedAt: guest[field] });\n    const columns = { reception_checkin_at: now };\n    return reply(200, { duplicate: false, reservation: person, event, scannedAt: now }, { op: 'checkin', id: guest.id, columns });\n  }\n\n  default:\n    return fail(400, 'Unknown request.');\n}\n"
       },
-      "id": "e0d950fa-69e0-44f3-aa75-728af6bf4705",
+      "id": "ec5b0522-e757-46b3-9196-dc89bd80605b",
       "name": "Handle guest action",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -169,7 +169,7 @@
         "numberOutputs": 4,
         "output": "={{ ({ rsvp: 0, checkin: 1, add: 2 })[$json.write?.op] ?? 3 }}"
       },
-      "id": "ba56e4e8-cfdb-4a4d-a754-2d4bac13d824",
+      "id": "a7c85c5c-2022-4424-a34b-8f69084d7e70",
       "name": "Save route",
       "type": "n8n-nodes-base.switch",
       "typeVersion": 3.2,
@@ -257,7 +257,7 @@
         },
         "options": {}
       },
-      "id": "d5900b89-f492-4bbf-9c91-8a63a62bb093",
+      "id": "d7749423-b146-4b48-8680-1a00d8db2347",
       "name": "Save RSVP",
       "type": "n8n-nodes-base.dataTable",
       "typeVersion": 1.1,
@@ -288,20 +288,10 @@
         "columns": {
           "mappingMode": "defineBelow",
           "value": {
-            "ceremony_checkin_at": "={{ $json.write.columns.ceremony_checkin_at }}",
             "reception_checkin_at": "={{ $json.write.columns.reception_checkin_at }}"
           },
           "matchingColumns": [],
           "schema": [
-            {
-              "id": "ceremony_checkin_at",
-              "displayName": "ceremony_checkin_at",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true
-            },
             {
               "id": "reception_checkin_at",
               "displayName": "reception_checkin_at",
@@ -315,7 +305,7 @@
         },
         "options": {}
       },
-      "id": "00922566-08c7-445b-bc3d-084a5724bf80",
+      "id": "8622e808-4e5f-4960-b5a8-64592e208355",
       "name": "Save check-in",
       "type": "n8n-nodes-base.dataTable",
       "typeVersion": 1.1,
@@ -349,7 +339,6 @@
             "rsvp_guests": "={{ $json.write.columns.rsvp_guests }}",
             "rsvp_request_key": "={{ $json.write.columns.rsvp_request_key }}",
             "rsvp_at": "={{ $json.write.columns.rsvp_at }}",
-            "ceremony_checkin_at": "={{ $json.write.columns.ceremony_checkin_at }}",
             "reception_checkin_at": "={{ $json.write.columns.reception_checkin_at }}"
           },
           "matchingColumns": [],
@@ -472,15 +461,6 @@
               "canBeUsedToMatch": true
             },
             {
-              "id": "ceremony_checkin_at",
-              "displayName": "ceremony_checkin_at",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true
-            },
-            {
               "id": "reception_checkin_at",
               "displayName": "reception_checkin_at",
               "required": false,
@@ -493,7 +473,7 @@
         },
         "options": {}
       },
-      "id": "b1f4e463-362c-4f3b-a471-0a682e24e835",
+      "id": "0b7bd1a3-30e1-4cc0-a00f-a75df327d25a",
       "name": "Add guest",
       "type": "n8n-nodes-base.dataTable",
       "typeVersion": 1.1,
@@ -507,7 +487,7 @@
         "mode": "runOnceForAllItems",
         "jsCode": "// After a Data Table write: send back the reply that \"Handle guest action\" prepared. A newly added\n// guest only gets its row id and creation time once it has been saved.\nconst plan = $('Handle guest action').first().json;\nconst saved = $input.first().json;\nconst body = { ...plan.body };\nif (plan.write && plan.write.op === 'add') {\n  body.id = String(saved.id);\n  body.createdAt = saved.createdAt ?? body.createdAt;\n}\nreturn [{ json: { status: plan.status, body } }];\n"
       },
-      "id": "d3f2dcef-7d13-48d9-b6fa-9d2dfa065d74",
+      "id": "fe6d7a8f-1a9a-42ce-9662-96978991d870",
       "name": "Finish guest write",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -531,7 +511,7 @@
         "orderByColumn": "createdAt",
         "orderByDirection": "DESC"
       },
-      "id": "498d6732-a5aa-4285-90d7-65efd39f326c",
+      "id": "cc314543-77d4-403d-9a6f-b3b94c71f96d",
       "name": "Get wishes",
       "type": "n8n-nodes-base.dataTable",
       "typeVersion": 1.1,
@@ -546,7 +526,7 @@
         "mode": "runOnceForAllItems",
         "jsCode": "// Wishes (\"Kind Words\"): list the latest 100, or add one. A repeated request key returns the\n// wish that was already saved, so a double tap never posts twice.\nconst { body } = $('New token').first().json;\nconst rows = $input.all().map((item) => item.json).filter((row) => row && row.id !== undefined && row.name);\nconst now = new Date().toISOString();\nconst reply = (status, payload, write = null) => [{ json: { status, body: payload, write } }];\nconst fail = (status, message) => reply(status, { error: message });\nconst wish = (row) => ({ id: String(row.id), name: row.name, message: row.message, createdAt: row.createdAt });\n\nif (body.action === 'wishes-list') return reply(200, rows.map(wish));\n\nif (body.action === 'wish-add') {\n  const { name, message, requestKey } = body;\n  if (typeof name !== 'string' || !name.trim() || name.length > 120\n    || typeof message !== 'string' || !message.trim() || message.length > 2000\n    || typeof requestKey !== 'string' || !/^[\\w-]{16,100}$/.test(requestKey)) {\n    return fail(400, 'Please enter a name and a wish of up to 2,000 characters.');\n  }\n  const previous = rows.find((row) => row.request_key === requestKey);\n  if (previous) return reply(200, wish(previous));\n  const columns = { request_key: requestKey, name: name.trim(), message: message.trim() };\n  return reply(201, { id: '', name: columns.name, message: columns.message, createdAt: now }, { op: 'add', columns });\n}\n\nreturn fail(400, 'Unknown request.');\n"
       },
-      "id": "9af85f0e-1805-4230-87fa-1b20a8920752",
+      "id": "bfac318c-320f-46f2-a4d5-443a3b6f2575",
       "name": "Handle wish action",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -561,7 +541,7 @@
         "numberOutputs": 2,
         "output": "={{ $json.write ? 0 : 1 }}"
       },
-      "id": "cbf38407-95de-4a9a-8bd0-3a337cd8a814",
+      "id": "e6adfbc9-55cb-4951-aa5b-6e6eb0306c7f",
       "name": "Wish route",
       "type": "n8n-nodes-base.switch",
       "typeVersion": 3.2,
@@ -619,7 +599,7 @@
         },
         "options": {}
       },
-      "id": "3e8d2959-5391-42b4-a0bf-5975b9d04c78",
+      "id": "9442c6a4-df21-49b8-aa2a-cf6456c21ec4",
       "name": "Add wish",
       "type": "n8n-nodes-base.dataTable",
       "typeVersion": 1.1,
@@ -633,7 +613,7 @@
         "mode": "runOnceForAllItems",
         "jsCode": "// After the wish is saved: reply with it, using the id and time the Data Table gave it.\nconst plan = $('Handle wish action').first().json;\nconst saved = $input.first().json;\nconst body = { ...plan.body, id: String(saved.id), createdAt: saved.createdAt ?? plan.body.createdAt };\nreturn [{ json: { status: plan.status, body } }];\n"
       },
-      "id": "aa2b627e-8048-4b45-97f7-05318392c27f",
+      "id": "de7a4d2d-6548-4a35-a799-06c50a34ee6f",
       "name": "Finish wish",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -650,7 +630,7 @@
           "responseCode": "={{ $json.status }}"
         }
       },
-      "id": "5bbd08bf-94c1-498d-9ef7-3a7ae8e01711",
+      "id": "c98f0db5-db15-43b0-a158-a5aec50acf8f",
       "name": "Respond",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.5,
@@ -918,7 +898,7 @@
   "settings": {
     "executionOrder": "v1"
   },
-  "versionId": "f03902b5-72f0-4bc9-af08-69342e9dcfc1",
+  "versionId": "9fab23fe-b434-4390-9dd3-b314a366e7f0",
   "meta": {
     "templateCredsSetupCompleted": false
   },

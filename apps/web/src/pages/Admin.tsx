@@ -2,9 +2,9 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { ApiError, INVITE_PATH, weddingApi } from "../lib/weddingApi";
 import { invitation } from "../data/invitation";
 
-type EventKey = "ceremony" | "reception";
+type EventKey = "reception";
 type ScanResult = { duplicate: boolean; event: EventKey; scannedAt: string; reservation: { id: string; name: string; guests: number; pax?: number | null; table?: string } };
-type Guest = { id: string; name: string; attending: string; event: string; guests: number; createdAt: string; ceremonyScannedAt: string | null; receptionScannedAt: string | null; pax?: number | null; table?: string };
+type Guest = { id: string; name: string; attending: string; event: string; guests: number; createdAt: string; receptionScannedAt: string | null; pax?: number | null; table?: string };
 type GuestList = { entries: Guest[]; total: number; page: number; pageSize: number; summary: { reservations: number; expectedGuests: number; checkedInCards: number; admittedGuests: number } };
 type PersonalInvitation = { id: string; token: string; name: string; maxGuests: number; createdAt: string; reservationId?: string | null; phone?: string; inviteSentAt?: string | null; pax?: number | null; table?: string };
 const dateTime = (value: string) => new Intl.DateTimeFormat("en-GB", { dateStyle: "medium", timeStyle: "short", timeZone: "Asia/Makassar" }).format(new Date(value));

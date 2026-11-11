@@ -1,13 +1,16 @@
 // Google Sheets: Extensions > Apps Script > paste this whole file > Save > reload the sheet.
 // It fills the "token" column by itself for every row that has a name and no token yet, as soon as you type a name,
-// and from the new menu "Wedding > Isi token kosong". A token is two random UUIDs without dashes = 64 lowercase hex characters,
-// the format the invitation, the QR and the n8n workflow expect. It is written once as plain text and never changes afterwards.
+// and from the new menu "Wedding > Isi token kosong". A token is 8 random hex characters (for example 3fa91c07), never repeated
+// in the sheet. It is written once as plain text and never changes afterwards.
 // Do NOT use a RANDBETWEEN formula for this: formulas are recalculated, which would silently change every guest's link.
 // The columns are found by their header names ("name" and "token" in row 1), so adding or moving other columns is fine.
 const TOKEN_SHEET = 'Guests';
 
-function newToken_() {
-  return (Utilities.getUuid() + Utilities.getUuid()).replace(/-/g, '').toLowerCase();
+function newToken_(taken) {
+  let token;
+  do { token = Utilities.getUuid().replace(/-/g, '').slice(0, 8).toLowerCase(); } while (taken.has(token));
+  taken.add(token);
+  return token;
 }
 
 function fillTokens_() {
@@ -24,9 +27,10 @@ function fillTokens_() {
     const names = sheet.getRange(2, nameCol, count, 1).getValues();
     const tokenRange = sheet.getRange(2, tokenCol, count, 1);
     const tokens = tokenRange.getValues();
+    const taken = new Set(tokens.map((row) => String(row[0]).trim().toLowerCase()).filter(Boolean));
     let changed = false;
     for (let i = 0; i < count; i++) {
-      if (String(names[i][0]).trim() && !String(tokens[i][0]).trim()) { tokens[i][0] = newToken_(); changed = true; }
+      if (String(names[i][0]).trim() && !String(tokens[i][0]).trim()) { tokens[i][0] = newToken_(taken); changed = true; }
     }
     if (changed) tokenRange.setValues(tokens); // only the token column is written; nothing else in the sheet is touched
   } finally {

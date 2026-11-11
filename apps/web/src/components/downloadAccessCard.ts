@@ -12,7 +12,7 @@ function loadImage(src: string): Promise<HTMLImageElement> {
   });
 }
 
-export async function downloadAccessCard(reservation: Reservation, eventKey: "ceremony" | "reception", qrImage: string) {
+export async function downloadAccessCard(reservation: Reservation, eventKey: "reception", qrImage: string) {
   const [photo, qr] = await Promise.all([loadImage(invitation.photos.accessCard), loadImage(qrImage)]);
   const event = invitation[eventKey];
   const W = 1188; // the card is 10% wider than the old 1080px; the content and photo header scale with it
@@ -60,8 +60,8 @@ export async function downloadAccessCard(reservation: Reservation, eventKey: "ce
   ctx.drawImage(qr, 64, rowY, Q, Q);
   let detailsY = write("Reserved for", DX, rowY + 45, W - 64 - DX, "28px Georgia", "#636a71");
   detailsY = write(reservation.name, DX, detailsY + 15, W - 64 - DX, "bold 40px Georgia", undefined, 48);
-  detailsY = write("Pax", DX, detailsY + 28, W - 64 - DX, "28px Georgia", "#636a71");
-  detailsY = write(`${reservation.pax ?? reservation.guests} pax`, DX, detailsY + 12, W - 64 - DX, "34px Georgia");
+  detailsY = write("Guest", DX, detailsY + 28, W - 64 - DX, "28px Georgia", "#636a71");
+  detailsY = write(`${reservation.pax ?? reservation.guests} ${(reservation.pax ?? reservation.guests) === 1 ? "guest" : "guests"}`, DX, detailsY + 12, W - 64 - DX, "34px Georgia");
   if (reservation.table) {
     detailsY = write("Table", DX, detailsY + 22, W - 64 - DX, "28px Georgia", "#636a71");
     detailsY = write(reservation.table, DX, detailsY + 12, W - 64 - DX, "34px Georgia");

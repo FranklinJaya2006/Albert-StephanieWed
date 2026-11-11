@@ -41,7 +41,7 @@ function Rsvp({ shown = true, ready = true }: { shown?: boolean; ready?: boolean
   const [invitationInfo, setInvitationInfo] = useState<{ name: string; maxGuests: number } | null>(null);
   const [checkingInvitation, setCheckingInvitation] = useState(true);
   const [allowUninvited, setAllowUninvited] = useState(false);
-  const [attending, setAttending] = useState("yes");
+  const [attending, setAttending] = useState(""); // nothing is chosen until the guest presses one of the two buttons
   const [wished, setWished] = useState(false);
   const [activeReservation, setActiveReservation] = useState<Reservation | null>(null);
   const reserved = Boolean(activeReservation);
@@ -55,6 +55,7 @@ function Rsvp({ shown = true, ready = true }: { shown?: boolean; ready?: boolean
   const reservationRequestKey = useRef<string | null>(null);
   const wishRequestKey = useRef<string | null>(null);
   const { groom, bride, coverNames, initials, photos } = invitation;
+  const guestCount = invitationInfo?.maxGuests ?? 1; // set by the organiser (sheet pax), never asked
 
   useEffect(() => {
     if (!shown) return;
@@ -149,6 +150,7 @@ function Rsvp({ shown = true, ready = true }: { shown?: boolean; ready?: boolean
         <h2 className="section-title" id="events-title">When &amp; Where</h2>
         <Ornament />
         <div className="events">
+          <EventCard {...invitation.ceremony} />
           <EventCard {...invitation.reception} />
         </div>
       </section>
@@ -177,7 +179,7 @@ function Rsvp({ shown = true, ready = true }: { shown?: boolean; ready?: boolean
               e.preventDefault();
               const data = new FormData(e.currentTarget);
               const name = String(data.get("name") ?? "").trim();
-              if (!name) return;
+              if (!name || !attending) return;
               if (savingReservation) return;
               setSavingReservation(true); setReservationError("");
               try {
@@ -185,7 +187,7 @@ function Rsvp({ shown = true, ready = true }: { shown?: boolean; ready?: boolean
                 const entry = await weddingApi<Reservation>("/reservations", { method: "POST", body: JSON.stringify({
                   requestKey: reservationRequestKey.current, name, attending, invitationToken: inviteToken ?? undefined,
                   event: attending === "yes" ? "reception" : "",
-                  guests: attending === "yes" ? Number(data.get("guests") ?? 1) : 0,
+                  guests: attending === "yes" ? guestCount : 0, // the server uses the invitation's pax anyway
                 }) });
                 setActiveReservation(entry);
                 try { localStorage.setItem(RESERVATION_STORAGE_KEY, entry.token); } catch { /* The card link also retains access. */ }
@@ -200,27 +202,17 @@ function Rsvp({ shown = true, ready = true }: { shown?: boolean; ready?: boolean
               <input name="name" defaultValue={invitationInfo?.name ?? guestName ?? ""} readOnly={Boolean(invitationInfo)} maxLength={120} required />
             </label>
             <label>
-              Attendance
-              <select name="attending" value={attending} onChange={(e) => setAttending(e.target.value)}>
-                <option value="yes">Will attend</option>
-                <option value="no">Unable to attend</option>
-              </select>
+              Guests
+              <input name="guests" value={`${guestCount} ${guestCount === 1 ? "guest" : "guests"}`} readOnly />
             </label>
-            {attending === "yes" && (
-              <>
-                <label>
-                  How many guests will be attending?
-                  <select name="guests" defaultValue="1">
-                    {Array.from({ length: invitationInfo?.maxGuests ?? 5 }, (_, index) => index + 1).map((n) => (
-                      <option key={n} value={n}>
-                        {n} {n === 1 ? "person" : "people"}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-              </>
-            )}
-            <button type="submit" className="button" disabled={savingReservation}>
+            <fieldset className="attendance-choice">
+              <legend>Attendance</legend>
+              <div className="attendance-options">
+                <button type="button" aria-pressed={attending === "yes"} onClick={() => setAttending("yes")}>Will attend</button>
+                <button type="button" aria-pressed={attending === "no"} onClick={() => setAttending("no")}>Unable to attend</button>
+              </div>
+            </fieldset>
+            <button type="submit" className="button" disabled={savingReservation || !attending}>
               {savingReservation ? "Saving…" : "Confirm"}
             </button>
           </form>

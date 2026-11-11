@@ -49,8 +49,8 @@ export default function ReservationQr({ reservation }: { reservation: Reservatio
           <div className="ticket-guest-details">
             <span>Reserved for</span>
             <h4>{reservation.name}</h4>
-            <span>Pax</span>
-            <p>{pax} pax</p>
+            <span>Guest</span>
+            <p>{pax} {pax === 1 ? "guest" : "guests"}</p>
             {reservation.table && <><span>Table</span><p>{reservation.table}</p></>}
             <span className="ticket-event-badge">{event.label}</span>
           </div>
