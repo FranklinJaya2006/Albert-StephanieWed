@@ -40,7 +40,7 @@ export const invitation = {
   eventDateTime: "2026-11-29T09:30:00+08:00",
   ceremony: {
     label: "Holy Matrimony ",
-    date: "Saturday, 29 November 2026",
+    date: "Sunday, 29 November 2026",
     time: "09.30 WITA",
     venue: "A. A Rifai Room, Hyatt Place Makassar",
     address: "Jl. Jend. Sudirman No.31, Makassar",
@@ -48,8 +48,8 @@ export const invitation = {
   },
   reception: {
     label: "Reception",
-    date: "Saturday, 29 November 2026",
-    time: "18.00 WITA",
+    date: "Sunday, 29 November 2026",
+    time: "18.30 WITA",
     venue: "New Bambuden (Bambuden III), 2nd Floor",
     address: "Jl. G. Latimojong No. 62, Makassar",
     mapsQuery: "?q=Bambuden+3+(New+Bambuden)",
